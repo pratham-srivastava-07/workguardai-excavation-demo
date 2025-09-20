@@ -19,7 +19,7 @@ export default async function registerContractor(id: string, companyName: string
                 userId: id,
                 companyName: companyName,
                 services: services,
-                description: description
+                description: description,
             }
         })
         return newContractor;
@@ -47,3 +47,19 @@ export async function getUniqueContractorProfile(id: string) {
         return {error: `${error}`}
     }
 }
+
+export async function getUniqueContractorProfileById(id: string) {
+    try {
+        const result = await prismaClient.contractorProfile.findUnique({
+            where: {
+                userId: id
+            }
+        })
+
+        return result;
+    } catch(error: any) {
+        console.log(`Error occured while getting a unique contractor ${error}`)
+        return error;
+    }
+}
+
