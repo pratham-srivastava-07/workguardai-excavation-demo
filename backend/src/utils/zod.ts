@@ -3,7 +3,8 @@ import zod from "zod"
 export const signupBody = zod.object({
     name: zod.string(),
     email: zod.email(),
-    password: zod.string().min(6)
+    password: zod.string().min(6),
+    role: zod.enum(["HOMEOWNER", "CONTRACTOR"]).optional(),
 })
 
 export type SignupBody = zod.infer<typeof signupBody>;
@@ -39,7 +40,7 @@ export const projectBodySchema = zod.object({
     "outdoor_renovation",
     "other"
   ], {
-    errorMap: () => ({ message: "Invalid project type" })
+    message: "Invalid project type"
   }),
   
   size: zod.number()
@@ -71,7 +72,7 @@ export const projectBodySchema = zod.object({
 // Project update schema
 export const projectUpdateSchema = zod.object({
   status: zod.enum(["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"], {
-    errorMap: () => ({ message: "Invalid status" })
+    message: "Invalid project type"
   })
 });
 
@@ -117,6 +118,6 @@ export const quoteSubmissionSchema = zod.object({
 // Quote status update schema
 export const quoteStatusUpdateSchema = zod.object({
   status: zod.enum(["ACCEPTED", "REJECTED"], {
-    errorMap: () => ({ message: "Status must be either ACCEPTED or REJECTED" })
+    message: "Invalid project type"
   })
 });

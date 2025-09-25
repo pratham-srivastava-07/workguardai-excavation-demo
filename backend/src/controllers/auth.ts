@@ -13,13 +13,14 @@ export default async function signupController(req: Request, res: Response) {
     });
   }
 
-  const { name, email, password } = parsedBody.data;
+  const { name, email, password, role } = parsedBody.data;
 
   try {
     const { newUser, accessToken, refreshToken } = await signupService(
       name,
       email,
-      password
+      password,
+      role ?? "HOMEOWNER"
     );
 
     return res.status(201).json({
