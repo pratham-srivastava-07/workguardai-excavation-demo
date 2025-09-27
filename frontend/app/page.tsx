@@ -1,8 +1,8 @@
-import Signup from "@/components/auth/Signup";
-import ContractorDashboard from "@/components/dashboard/ContractorDashboard";
+import Landing from "@/components/content/Landing";
 
 export default function Home() {
   return <div>
-    <Signup />
+    {/* <Signup /> */}
+    <Landing />
   </div>
 }
