@@ -32,7 +32,7 @@ export function DashboardSidebar() {
         <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
           <div className="w-4 h-4 bg-white rounded-sm"></div>
         </div>
-        <span className="font-bold text-lg">PRO.KI</span>
+        <span className="font-bold text-lg">Renowise</span>
       </div>
 
       {/* User Profile */}

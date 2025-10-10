@@ -18,7 +18,7 @@ export default function HomeownerDashboard() {
 
           <main className="flex-1 overflow-auto">
             <div className="p-6 space-y-6">
-              <ProjectCards />
+              {/* <ProjectCards /> */}
               <TasksSection />
             </div>
           </main>

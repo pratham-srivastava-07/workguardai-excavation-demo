@@ -42,7 +42,7 @@ export function RightSidebar() {
       className="w-80 bg-gray-900/30 border-l border-gray-800 p-6 hidden xl:block overflow-y-auto"
     >
       {/* Project Discovery Call */}
-      <Card className="p-4 mb-6 bg-blue-600/10 border-blue-600/20">
+      {/* <Card className="p-4 mb-6 bg-blue-600/10 border-blue-600/20">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs text-blue-400 mb-1">30 minutes call with Client</p>
@@ -77,7 +77,7 @@ export function RightSidebar() {
             </Button>
           </div>
         </div>
-      </Card>
+      </Card> */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
