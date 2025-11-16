@@ -25,7 +25,7 @@ export default async function signupController(req: Request, res: Response) {
 
     return res.status(201).json({
       message: "User created successfully",
-      user: { id: newUser.id, name: newUser.name, email: newUser.email },
+      user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role },
       accessToken,
       refreshToken,
     });
@@ -39,6 +39,8 @@ export default async function signupController(req: Request, res: Response) {
 
 export async function signinController(req: Request, res: Response) {
   const parsedBody = signinBody.safeParse(req.body);
+  console.log("REQUEST BODY", req.body);
+  
 
   if (!parsedBody.success) {
     return res.status(400).json({
@@ -66,6 +68,7 @@ export async function signinController(req: Request, res: Response) {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role
       },
       accessToken,
       refreshToken,

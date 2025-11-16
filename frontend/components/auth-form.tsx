@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Mail, Lock, User, Building2 } from 'lucide-react'
+import loginUser, { signupUser } from '@/utils/helper'
+import { useRouter } from 'next/navigation'
 
 interface AuthFormProps {
   type: 'signin' | 'signup'
@@ -17,6 +19,8 @@ export function AuthForm({ type }: AuthFormProps) {
   const [name, setName] = useState('')
   const [role, setRole] = useState<'homeowner' | 'contractor'>('homeowner')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,6 +29,47 @@ export function AuthForm({ type }: AuthFormProps) {
     await new Promise((resolve) => setTimeout(resolve, 1000))
     setIsLoading(false)
   }
+
+ const handleLogin = async () => {
+  setError(null); // reset error
+
+  const response = await loginUser(email, password);
+
+  if (!response || !response.ok) {
+    const err = await response?.json();
+    setError(err?.message || "Login failed");
+    return; // stop navigation
+  }
+
+  const data = await response.json();
+  console.log("RESPONSE", data);
+
+  router.push(
+    data.user.role === "CONTRACTOR"
+      ? "/contractor-dashboard"
+      : "/homeowner-dashboard"
+  );
+};
+
+  const handleSignup = async () => {
+  setError(null);
+
+  const response = await signupUser(name, email, password, role);
+
+  if (!response || !response.ok) {
+    const err = await response?.json();
+    setError(err?.message || "Signup failed");
+    return;
+  }
+
+  const data = await response.json();
+
+  router.push(
+    data.user.role === "CONTRACTOR"
+      ? "/contractor-dashboard"
+      : "/homeowner-dashboard"
+  );
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background color-white text-white">
@@ -130,12 +175,18 @@ export function AuthForm({ type }: AuthFormProps) {
                 />
               </div>
             </div>
-
+            {/* Error Message */}
+            {error && (
+              <p className="text-red-500 text-sm text-center mb-2">
+                {error}
+              </p>
+            )}
             {/* Submit Button */}
             <Button
               type="submit"
               disabled={isLoading}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              onClick={type === "signin" ? handleLogin: handleSignup}
             >
               {isLoading
                 ? 'Loading...'

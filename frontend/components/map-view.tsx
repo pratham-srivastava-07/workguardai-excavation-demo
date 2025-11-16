@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { MapPin, Star, Container as MapContainer, Search, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import maplibregl from 'maplibre-gl'
+import { MapPin, Star, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
-// Mock data for demonstration
 const MOCK_CONTRACTORS = [
   {
     id: 1,
@@ -48,7 +48,7 @@ const MOCK_CONTRACTORS = [
     rating: 4.7,
     reviews: 67,
     distance: 1.5,
-    lat: 40.7180,
+    lat: 40.718,
     lng: -74.002,
     image: '/restoration-work.jpg',
   },
@@ -59,20 +59,77 @@ export function MapView() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredContractors, setFilteredContractors] = useState(MOCK_CONTRACTORS)
 
+  const mapContainer = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<maplibregl.Marker[]>([])
+
+  // Handle search
   const handleSearch = (query: string) => {
     setSearchQuery(query)
-    if (query === '') {
-      setFilteredContractors(MOCK_CONTRACTORS)
-    } else {
-      setFilteredContractors(
-        MOCK_CONTRACTORS.filter(
-          (c) =>
-            c.name.toLowerCase().includes(query.toLowerCase()) ||
-            c.category.toLowerCase().includes(query.toLowerCase())
-        )
+    if (!query) return setFilteredContractors(MOCK_CONTRACTORS)
+
+    setFilteredContractors(
+      MOCK_CONTRACTORS.filter(
+        c =>
+          c.name.toLowerCase().includes(query.toLowerCase()) ||
+          c.category.toLowerCase().includes(query.toLowerCase())
       )
-    }
+    )
   }
+
+  // Initialize MapLibre once
+  useEffect(() => {
+    if (!mapContainer.current) return
+
+    mapRef.current = new maplibregl.Map({
+      container: mapContainer.current,
+      style: `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_KEY}`,
+      center: [-74.006, 40.7128],
+      zoom: 13,
+    })
+
+    return () => {
+      mapRef.current?.remove()
+    }
+  }, [])
+
+  // Add/refresh markers whenever filtered contractors change
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    // Clear old markers
+    markersRef.current.forEach(m => m.remove())
+    markersRef.current = []
+
+    filteredContractors.forEach(contractor => {
+      const el = document.createElement('div')
+      el.className =
+        'bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center shadow-lg cursor-pointer'
+      el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="white" viewBox="0 0 24 24"><path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7z"/></svg>`
+
+      const marker = new maplibregl.Marker(el)
+        .setLngLat([contractor.lng, contractor.lat])
+        .addTo(mapRef.current!)
+
+      el.onclick = () => {
+        setSelectedContractor(contractor)
+        mapRef.current?.flyTo({ center: [contractor.lng, contractor.lat], zoom: 14 })
+      }
+
+      markersRef.current.push(marker)
+    })
+  }, [filteredContractors])
+
+  // When user selects from sidebar
+  useEffect(() => {
+    if (selectedContractor && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [selectedContractor.lng, selectedContractor.lat],
+        zoom: 14,
+        speed: 1.2,
+      })
+    }
+  }, [selectedContractor])
 
   return (
     <div className="flex h-screen">
@@ -85,7 +142,7 @@ export function MapView() {
             <Input
               placeholder="Search services..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={e => handleSearch(e.target.value)}
               className="pl-10 bg-secondary border-border/50 text-foreground placeholder:text-muted-foreground"
             />
           </div>
@@ -94,7 +151,7 @@ export function MapView() {
         {/* Listings */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-3">
-            {filteredContractors.map((contractor) => (
+            {filteredContractors.map(contractor => (
               <Card
                 key={contractor.id}
                 onClick={() => setSelectedContractor(contractor)}
@@ -106,7 +163,7 @@ export function MapView() {
               >
                 <div className="aspect-video bg-secondary overflow-hidden">
                   <img
-                    src={contractor.image || "/placeholder.svg"}
+                    src={contractor.image || '/placeholder.svg'}
                     alt={contractor.name}
                     className="w-full h-full object-cover"
                   />
@@ -132,41 +189,11 @@ export function MapView() {
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="hidden md:flex flex-1 relative bg-gradient-to-br from-secondary to-background">
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="text-center">
-            <MapContainer className="w-24 h-24 mx-auto mb-4 text-muted-foreground opacity-30" />
-            <p className="text-muted-foreground mb-2">Interactive Map</p>
-            <p className="text-sm text-muted-foreground/50 max-w-xs">
-              Mapbox integration would render an interactive map here with contractor locations and details.
-            </p>
-          </div>
-        </div>
+      {/* Map */}
+      <div className="hidden md:flex flex-1 relative">
+        <div ref={mapContainer} className="w-full h-full" />
 
-        {/* Map Markers Overlay */}
-        <div className="absolute inset-0 pointer-events-none">
-          {filteredContractors.map((contractor, index) => {
-            const x = 20 + (index % 2) * 60
-            const y = 20 + Math.floor(index / 2) * 40
-            return (
-              <button
-                key={contractor.id}
-                onClick={() => setSelectedContractor(contractor)}
-                className={`absolute w-12 h-12 rounded-full flex items-center justify-center pointer-events-auto transition-all transform hover:scale-110 ${
-                  selectedContractor?.id === contractor.id
-                    ? 'bg-primary ring-2 ring-primary/50 scale-110'
-                    : 'bg-accent hover:bg-accent/80'
-                }`}
-                style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
-              >
-                <MapPin className="w-6 h-6 text-primary-foreground" />
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Selected Contractor Info Card */}
+        {/* Selected Contractor Info */}
         {selectedContractor && (
           <div className="absolute bottom-6 right-6 w-80 bg-card border border-border/50 rounded-xl shadow-xl p-6">
             <div className="flex justify-between items-start mb-4">
@@ -183,14 +210,16 @@ export function MapView() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-accent text-accent" />
-                  <span className="font-medium text-foreground">{selectedContractor.rating}</span>
-                  <span className="text-sm text-muted-foreground">({selectedContractor.reviews} reviews)</span>
-                </div>
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 fill-accent text-accent" />
+                <span className="font-medium">{selectedContractor.rating}</span>
+                <span className="text-sm text-muted-foreground">
+                  ({selectedContractor.reviews} reviews)
+                </span>
               </div>
+
               <p className="text-sm text-muted-foreground">{selectedContractor.distance} miles away</p>
+
               <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                 Message & Book
               </Button>
