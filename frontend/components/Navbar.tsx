@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const {isLoggedIn, user, logout} = useAuth()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -47,19 +49,22 @@ export function Navbar() {
           >
             Solution
           </Link>
-          <Button
+          {!isLoggedIn && <>
+           <Button
             variant="outline"
             className="border-white/20 text-black hover:bg-white/10 hover:text-white"
             asChild
           >
             <Link href="/login">Login</Link>
-          </Button>
+          </Button></>}
+         {!isLoggedIn && <>
           <Button
             className="bg-white text-black hover:bg-white/90"
             asChild
           >
             <Link href="/signup">Sign Up</Link>
           </Button>
+         </>}
         </div>
 
         <Sheet>

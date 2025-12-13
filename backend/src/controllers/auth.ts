@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { signinBody, signupBody } from "../utils/zod";
 import { signupService } from "../services/signup";
 import { signinService } from "../services/signin";
+import { generateTokens, verifyRefreshToken } from "../utils/authUtils";
 
 export default async function signupController(req: Request, res: Response) {
   const parsedBody = signupBody.safeParse(req.body);
@@ -83,4 +84,32 @@ export async function signinController(req: Request, res: Response) {
   }
 }
 
-export async function logoutController() {}
+export const refreshTokenController = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({ 
+        message: 'Refresh token required' 
+      });
+    }
+
+    // Verify refresh token
+    const decoded = verifyRefreshToken(refreshToken) as { 
+      id: string; 
+      email: string 
+    };
+    
+    // Generate new tokens
+    const tokens = generateTokens({ 
+      id: decoded.id, 
+      email: decoded.email 
+    });
+
+    return res.status(200).json(tokens);
+  } catch (error) {
+    return res.status(401).json({ 
+      message: 'Invalid refresh token' 
+    });
+  }
+};
