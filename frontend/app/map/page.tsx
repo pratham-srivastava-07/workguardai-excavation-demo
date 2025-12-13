@@ -215,7 +215,7 @@ function MapPageContent() {
         limit: '20',
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/posts/search?${params}`);
+      const response = await fetch(`${API_BASE_URL}/posts/search?${params}`);
       const data = await response.json();
 
       if (data.data) {
@@ -288,7 +288,7 @@ function MapPageContent() {
       const token = localStorage.getItem('accessToken');
       if (token) {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/v1/posts`, {
+          const response = await fetch(`${API_BASE_URL}/posts`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },

@@ -31,7 +31,7 @@ export default function CompanyDashboard() {
           return
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/dashboard/stats`, {
+        const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

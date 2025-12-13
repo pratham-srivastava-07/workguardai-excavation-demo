@@ -56,7 +56,7 @@ export function OrdersTab({ onOrderClick, onMapCenter }: OrdersTabProps) {
         
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/orders`, {
+        const response = await fetch(`${API_BASE_URL}/orders`, {
           headers: {
             "Content-Type": "application/json",
             'Authorization': `Bearer ${token}`,
