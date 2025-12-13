@@ -5,11 +5,11 @@ import { PersistentMapLayout } from '@/components/map/persistent-map-layout';
 import { SearchResults } from '@/components/map/search-results';
 import { PostDetail } from '@/components/map/post-detail';
 import { CreatePostForm } from '@/components/posts/create-post-form';
-import { AuthGuard } from '@/lib/auth-guard';
 import { MakeOfferModal } from '@/components/map/make-offer-modal';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -36,9 +36,9 @@ interface Post {
 
 export default function MapPage() {
   return (
-    <AuthGuard requireAuth={true}>
+    <ProtectedRoute>
       <MapPageContent />
-    </AuthGuard>
+    </ProtectedRoute>
   );
 }
 
