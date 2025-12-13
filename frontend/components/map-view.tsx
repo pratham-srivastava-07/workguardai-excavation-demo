@@ -77,6 +77,8 @@ export function MapView() {
     )
   }
 
+  console.log('Geoapify key:', process.env.NEXT_PUBLIC_GEOAPIFY_KEY)
+
   // Initialize MapLibre once
   useEffect(() => {
     if (!mapContainer.current) return

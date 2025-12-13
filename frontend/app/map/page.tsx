@@ -10,7 +10,6 @@ import { MakeOfferModal } from '@/components/map/make-offer-modal';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -58,20 +57,71 @@ function MapPageContent() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapLoading, setMapLoading] = useState(true);
 
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    mapRef.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${process.env.NEXT_PUBLIC_GEOAPIFY_KEY}`,
-      center: [-9.1393, 38.7223], // Lisbon default
-      zoom: 12,
-    });
+    setMapLoading(true);
+    setMapError(null);
+
+    // Wait for container to have dimensions
+    const checkContainer = setInterval(() => {
+      if (mapContainer.current && mapContainer.current.offsetWidth > 0 && mapContainer.current.offsetHeight > 0) {
+        clearInterval(checkContainer);
+        
+        const apiKey = process.env.NEXT_PUBLIC_GEOAPIFY_KEY;
+        const mapStyle = apiKey 
+          ? `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${apiKey}`
+          : 'https://demotiles.maplibre.org/style.json'; // Fallback style
+
+        try {
+          mapRef.current = new maplibregl.Map({
+            container: mapContainer.current,
+            style: mapStyle,
+            center: [-9.1393, 38.7223], // Lisbon default
+            zoom: 12,
+          });
+
+          mapRef.current.on('load', () => {
+            setMapLoading(false);
+            setMapError(null);
+          });
+
+          mapRef.current.on('error', (e) => {
+            console.error('Map error:', e);
+            setMapError('Failed to load map. Please check your API key or try refreshing.');
+            setMapLoading(false);
+          });
+
+          // Add navigation controls
+          mapRef.current.addControl(new maplibregl.NavigationControl(), 'top-right');
+        } catch (error: any) {
+          console.error('Error initializing map:', error);
+          setMapError(error.message || 'Failed to initialize map');
+          setMapLoading(false);
+        }
+      }
+    }, 100);
+
+    // Timeout after 5 seconds
+    const timeout = setTimeout(() => {
+      clearInterval(checkContainer);
+      if (!mapRef.current) {
+        setMapError('Map initialization timeout. Please check your internet connection and API key.');
+        setMapLoading(false);
+      }
+    }, 5000);
 
     return () => {
-      mapRef.current?.remove();
+      clearInterval(checkContainer);
+      clearTimeout(timeout);
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, []);
 
@@ -312,7 +362,43 @@ function MapPageContent() {
       activeMenuItem={activeMenuItem}
       onMenuItemClick={handleMenuItemClick}
     >
-      <div ref={mapContainer} className="w-full h-full absolute inset-0" />
+      <div 
+        ref={mapContainer} 
+        className="w-full h-full absolute inset-0 z-0"
+        style={{ 
+          minHeight: '100%', 
+          minWidth: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0
+        }}
+      />
+      {/* Map Loading/Error State */}
+      {(mapLoading || mapError) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-md text-center">
+            {mapLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-white">Loading map...</p>
+              </>
+            ) : (
+              <>
+                <p className="text-red-400 mb-2">Map Error</p>
+                <p className="text-gray-300 text-sm mb-4">{mapError}</p>
+                <p className="text-gray-500 text-xs">
+                  {!process.env.NEXT_PUBLIC_GEOAPIFY_KEY && (
+                    <>Missing NEXT_PUBLIC_GEOAPIFY_KEY in .env.local<br /></>
+                  )}
+                  Check browser console for details
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Create Post Button - Prominent Floating CTA */}
       <Button

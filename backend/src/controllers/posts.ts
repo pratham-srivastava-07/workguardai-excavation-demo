@@ -26,13 +26,16 @@ export async function createPostController(req: Request, res: Response) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  // ✅ FILE VALIDATION (NOT ZOD)
+  const files: any = req.files as Express.Multer.File[];
+  const availabilityDate = parsedBody.data.availabilityDate || undefined;
+
   try {
     const result = await createPost({
       ...parsedBody.data,
+      availabilityDate,
       userId,
-      availabilityDate: parsedBody.data.availabilityDate
-        ? new Date(parsedBody.data.availabilityDate)
-        : undefined,
+      images: files, // pass files to service
     });
 
     if (result.error) {
@@ -43,11 +46,12 @@ export async function createPostController(req: Request, res: Response) {
       message: "Post created successfully",
       data: result.data,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in createPostController:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
 
 export async function searchPostsController(req: Request, res: Response) {
   const parsedQuery = postSearchSchema.safeParse(req.query);

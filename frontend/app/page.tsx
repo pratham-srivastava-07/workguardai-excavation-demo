@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { Package, Building2, Hammer } from 'lucide-react';
 
 export default function Home() {
+  console.log('Geoapify key:', process.env.NEXT_PUBLIC_GEOAPIFY_KEY)
   return (
     <div className="min-h-screen bg-black text-white">
       <AnimatedBackground />

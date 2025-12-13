@@ -122,31 +122,49 @@ export const quoteStatusUpdateSchema = zod.object({
   })
 });
 
-// Post creation schema
 export const postCreateSchema = zod.object({
   type: zod.enum(["MATERIAL", "SERVICE", "SPACE"]),
-  title: zod.string().min(3, "Title must be at least 3 characters").max(200),
+
+  title: zod.string().min(3).max(200),
   description: zod.string().max(2000).optional(),
-  subtype: zod.string().min(1, "Subtype is required"),
-  quantity: zod.number().min(0.01).optional(),
+
+  subtype: zod.string().min(1),
+
+  quantity: zod.coerce.number().min(0.01).optional(),
   unit: zod.string().optional(),
-  price: zod.number().min(0).optional(),
-  latitude: zod.number().min(-90).max(90),
-  longitude: zod.number().min(-180).max(180),
+
+  price: zod.coerce.number().min(0).optional(),
+
+  latitude: zod.coerce.number().min(-90).max(90),
+  longitude: zod.coerce.number().min(-180).max(180),
+
   address: zod.string().optional(),
-  availabilityDate: zod.string().datetime().optional(),
+
+  // frontend sends YYYY-MM-DD → convert safely
+  availabilityDate: zod
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      // Convert YYYY-MM-DD to ISO string
+      return new Date(val + 'T00:00:00.000Z');
+    }),
+
   condition: zod.string().optional(),
   rentalDuration: zod.string().optional(),
-  hourlyRate: zod.number().min(0).optional(),
-  dailyRate: zod.number().min(0).optional(),
-  pickupAllowed: zod.boolean().default(false),
-  transportNeeded: zod.boolean().default(false),
-  canCompanyCollect: zod.boolean().default(false),
-  permitForReuse: zod.boolean().default(false),
-  hazardousMaterials: zod.boolean().default(false),
-  structuralItems: zod.boolean().default(false),
+
+  hourlyRate: zod.coerce.number().min(0).optional(),
+  dailyRate: zod.coerce.number().min(0).optional(),
+
+  pickupAllowed: zod.coerce.boolean().default(false),
+  transportNeeded: zod.coerce.boolean().default(false),
+  canCompanyCollect: zod.coerce.boolean().default(false),
+  permitForReuse: zod.coerce.boolean().default(false),
+  hazardousMaterials: zod.coerce.boolean().default(false),
+  structuralItems: zod.coerce.boolean().default(false),
+
   socialLink: zod.string().url().optional().or(zod.literal("")),
-  images: zod.array(zod.string().url()).min(2, "At least 2 images required").max(6, "Maximum 6 images allowed"),
+
   companyId: zod.string().optional(),
   cityId: zod.string().optional(),
 });

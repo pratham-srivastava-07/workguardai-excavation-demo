@@ -77,7 +77,7 @@ export function PersistentMapLayout({
   };
 
   return (
-    <div className="h-screen flex flex-col bg-black">
+    <div className="h-screen flex flex-col bg-white">
       {/* Top Bar */}
       <TopBar
         onSearch={handleSearch}
@@ -98,8 +98,13 @@ export function PersistentMapLayout({
         )}
 
         {/* Map Area */}
-        <div className="flex-1 relative overflow-hidden">
-          {/* Left Panel Overlay */}
+        <div className="flex-1 relative overflow-hidden" style={{ minHeight: 0 }}>
+          {/* Map View - Always visible, behind everything */}
+          <div className="absolute inset-0 w-full h-full z-0">
+            {children}
+          </div>
+
+          {/* Left Panel Overlay - Above map */}
           <LeftPanel
             isOpen={leftPanelOpen}
             onToggle={() => setLeftPanelOpen(!leftPanelOpen)}
@@ -111,13 +116,8 @@ export function PersistentMapLayout({
             }}
             title={leftPanelTitle}
           >
-            {leftPanelContent || children}
+            {leftPanelContent}
           </LeftPanel>
-
-          {/* Map View - Always visible */}
-          <div className="absolute inset-0 w-full h-full">
-            {children || <MapView />}
-          </div>
         </div>
       </div>
     </div>

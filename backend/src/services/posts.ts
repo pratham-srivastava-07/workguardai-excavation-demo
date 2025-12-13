@@ -12,7 +12,7 @@ interface CreatePostInput {
   latitude: number;
   longitude: number;
   address?: string;
-  availabilityDate?: Date;
+  availabilityDate?: any;
   condition?: string;
   rentalDuration?: string;
   hourlyRate?: number;

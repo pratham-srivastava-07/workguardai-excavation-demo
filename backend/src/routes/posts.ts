@@ -16,6 +16,9 @@ import {
 import { validateBody } from "../middlewares/validate";
 import { postCreateSchema, postUpdateSchema, offerCreateSchema } from "../utils/zod";
 import authMiddleware from "../middlewares/auth";
+import multer from "multer"
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 export const postRouter = express.Router();
 
@@ -27,8 +30,8 @@ postRouter.get("/:id", getPostByIdController);
 postRouter.use(authMiddleware);
 
 postRouter.get("/", getUserPostsController);
-postRouter.post("/", validateBody(postCreateSchema), createPostController);
-postRouter.put("/:id", validateBody(postUpdateSchema), updatePostController);
+postRouter.post("/", upload.array('images', 6), createPostController);
+postRouter.put("/:id", updatePostController);
 postRouter.delete("/:id", deletePostController);
 postRouter.patch("/:id/status", updatePostStatusController);
 
