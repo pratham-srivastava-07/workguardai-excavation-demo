@@ -12,6 +12,7 @@ import {
   createOfferController,
   getPostOffersController,
   updateOfferStatusController,
+  updateOfferController,
 } from "../controllers/offers";
 import { validateBody } from "../middlewares/validate";
 import { postCreateSchema, postUpdateSchema, offerCreateSchema } from "../utils/zod";
@@ -39,4 +40,5 @@ postRouter.patch("/:id/status", updatePostStatusController);
 postRouter.post("/:postId/offers", validateBody(offerCreateSchema), createOfferController);
 postRouter.get("/:postId/offers", getPostOffersController);
 postRouter.patch("/offers/:id/status", updateOfferStatusController);
+postRouter.put("/offers/:id", updateOfferController);
 

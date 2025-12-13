@@ -9,7 +9,7 @@ export async function signinService(email: string, password: string) {
   const isPasswordValid = await verifyPassword(password, user.password);
   if (!isPasswordValid) return null;
 
-  const tokens = generateTokens({ id: user.id, email: user.email });
+  const tokens = generateTokens({ id: user.id, email: user.email, role: user.role });
 
   return { user, ...tokens };
 }

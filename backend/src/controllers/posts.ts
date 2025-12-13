@@ -30,12 +30,24 @@ export async function createPostController(req: Request, res: Response) {
   const files: any = req.files as Express.Multer.File[];
   const availabilityDate = parsedBody.data.availabilityDate || undefined;
 
+  // Convert uploaded files to base64 data URLs
+  const imageUrls: string[] = [];
+  if (files && files.length > 0) {
+    for (const file of files) {
+      if (file.buffer) {
+        const base64 = file.buffer.toString('base64');
+        const mimeType = file.mimetype || 'image/jpeg';
+        imageUrls.push(`data:${mimeType};base64,${base64}`);
+      }
+    }
+  }
+
   try {
     const result = await createPost({
       ...parsedBody.data,
       availabilityDate,
       userId,
-      images: files, // pass files to service
+      images: imageUrls, // pass base64 URLs to service
     });
 
     if (result.error) {

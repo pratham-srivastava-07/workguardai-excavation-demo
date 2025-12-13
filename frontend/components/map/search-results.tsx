@@ -94,7 +94,7 @@ export function SearchResults({ posts, onPostClick, loading }: SearchResultsProp
         <span className="text-sm font-medium text-gray-300">
           {posts.length} result{posts.length !== 1 ? 's' : ''}
         </span>
-        <select className="text-sm border border-gray-700 bg-gray-900 text-white rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary">
+        <select className="text-sm border border-gray-700 bg-gray-900 text-white rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
           <option>Sort by: Distance</option>
           <option>Sort by: Price</option>
           <option>Sort by: Newest</option>
@@ -118,17 +118,27 @@ export function SearchResults({ posts, onPostClick, loading }: SearchResultsProp
           >
             {/* Thumbnail */}
             <div className="aspect-video bg-gray-100 overflow-hidden relative">
-              {post.images && post.images.length > 0 ? (
-                <img
-                  src={post.images[0]}
-                  alt={post.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
+              {(() => {
+                const images = Array.isArray(post.images) 
+                  ? post.images 
+                  : typeof post.images === 'string' 
+                    ? (() => { try { return JSON.parse(post.images); } catch { return []; } })()
+                    : [];
+                return images.length > 0 ? (
+                  <img
+                    src={images[0]}
+                    alt={post.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x600?text=Image+Not+Available';
+                    }}
+                  />
+                ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <Icon className="w-12 h-12 text-gray-400" />
                 </div>
-              )}
+              );
+              })()}
               <div className="absolute top-2 left-2">
                 <Badge className={typeColor}>
                   {post.type}

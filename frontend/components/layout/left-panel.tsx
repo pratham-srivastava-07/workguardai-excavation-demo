@@ -21,7 +21,7 @@ export function LeftPanel({ children, isOpen, onClose, onToggle, title, classNam
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="absolute top-20 left-4 z-40 bg-black border border-gray-800 rounded-r-lg shadow-lg p-2 hover:bg-gray-900 transition-colors"
+          className="absolute top-20 left-4 z-40 bg-black border border-gray-800 rounded-r-lg shadow-lg p-2 hover:bg-gray-900 transition-colors cursor-pointer"
         >
           <ChevronRight className="w-5 h-5 text-white" />
         </button>
@@ -31,7 +31,7 @@ export function LeftPanel({ children, isOpen, onClose, onToggle, title, classNam
       <div
         className={cn(
           'absolute top-16 left-0 h-[calc(100vh-4rem)] bg-black border-r border-gray-800 shadow-2xl transition-transform duration-300 z-30 flex flex-col',
-          isOpen ? 'translate-x-0 w-full md:w-96 lg:w-[420px]' : '-translate-x-full',
+          isOpen ? 'translate-x-0 w-full sm:w-96 md:w-[420px]' : '-translate-x-full',
           className
         )}
       >
@@ -45,7 +45,7 @@ export function LeftPanel({ children, isOpen, onClose, onToggle, title, classNam
                   variant="ghost"
                   size="sm"
                   onClick={onToggle}
-                  className="md:hidden text-gray-400 hover:text-white"
+                  className="md:hidden text-gray-400 hover:text-white cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -55,7 +55,7 @@ export function LeftPanel({ children, isOpen, onClose, onToggle, title, classNam
                   variant="ghost"
                   size="sm"
                   onClick={onClose}
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-white cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </Button>

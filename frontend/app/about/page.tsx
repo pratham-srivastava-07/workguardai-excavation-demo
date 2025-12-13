@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Building2, Users, MapPin, Heart } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AboutPage() {
+  const {isLoggedIn} = useAuth()
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
@@ -126,9 +128,10 @@ export default function AboutPage() {
             Join thousands of users already using Renowise to find materials, offer services, and build sustainably.
           </p>
           <div className="flex justify-center space-x-4">
+            {!isLoggedIn && <>
             <Button asChild size="lg">
               <Link href="/signup">Sign Up Free</Link>
-            </Button>
+            </Button></>}
             <Button asChild variant="outline" size="lg">
               <Link href="/map">Explore Map</Link>
             </Button>

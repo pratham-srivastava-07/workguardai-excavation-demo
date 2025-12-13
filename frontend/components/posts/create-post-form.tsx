@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Upload, X, Sparkles, AlertCircle, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { API_BASE_URL } from '@/constants/env';
 
 const MATERIAL_SUBTYPES = [
   'window', 'tiles', 'iron bar', 'wood', 'planks', 'roof tiles',

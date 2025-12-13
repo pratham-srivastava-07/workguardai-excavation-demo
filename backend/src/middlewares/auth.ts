@@ -8,6 +8,10 @@ export default function authMiddleware(
   next: NextFunction
 ) {
   const authHeader = req.headers.authorization;
+  console.log("PROJECT TASK MIDDLEWARE REACHING HERE");
+  console.log("AUTH HEADER", authHeader);
+  
+  
   if (!authHeader) {
     return res.status(401).json({ message: "No token provided" });
   }

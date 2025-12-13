@@ -16,7 +16,7 @@ export async function signupService(name: string, email: string, password: strin
     data: { name, email, password: hashedPassword, role: role as Role },
   });
 
-  const tokens = generateTokens({ id: newUser.id, email: newUser.email });
+  const tokens = generateTokens({ id: newUser.id, email: newUser.email, role: newUser.role as string });
 
   return { newUser, ...tokens };
 }

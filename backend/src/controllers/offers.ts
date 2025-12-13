@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import { createOffer, getPostOffers, updateOfferStatus } from "../services/offers";
+import { createOffer, getPostOffers, updateOfferStatus, updateOffer } from "../services/offers";
 import { offerCreateSchema } from "../utils/zod";
 import { OfferStatus } from "@prisma/client";
+import { prismaClient } from "../db";
 
 export async function createOfferController(req: Request, res: Response) {
   const parsedBody = offerCreateSchema.safeParse(req.body);
@@ -19,10 +20,23 @@ export async function createOfferController(req: Request, res: Response) {
   }
 
   try {
+    // Get companyId if user is a company
+    let companyId: string | undefined;
+    const userRole = (req as any).user?.role;
+    if (userRole === 'COMPANY') {
+      const companyProfile = await prismaClient.companyProfile.findUnique({
+        where: { userId },
+        select: { id: true },
+      });
+      if (companyProfile) {
+        companyId = companyProfile.id;
+      }
+    }
+
     const result = await createOffer({
       ...parsedBody.data,
       userId,
-      // TODO: Get companyId from user's company profile if user is a company
+      companyId,
     });
 
     if (result.error) {
@@ -71,11 +85,11 @@ export async function updateOfferStatusController(req: Request, res: Response) {
   }
 
   if (!Object.values(OfferStatus).includes(status)) {
-    return res.status(400).json({ message: "Invalid status" });
+    return res.status(400).json({ message: "Invalid offer status" });
   }
 
   try {
-    const result = await updateOfferStatus(id, userId, status);
+    const result = await updateOfferStatus(id, userId, status as OfferStatus);
 
     if (result.error) {
       return res.status(400).json({ message: result.error });
@@ -91,3 +105,28 @@ export async function updateOfferStatusController(req: Request, res: Response) {
   }
 }
 
+export async function updateOfferController(req: Request, res: Response) {
+  const { id } = req.params;
+  const { amount, message } = req.body;
+  const userId = (req as any).user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const result = await updateOffer(id, userId, { amount, message });
+
+    if (result.error) {
+      return res.status(400).json({ message: result.error });
+    }
+
+    return res.status(200).json({
+      message: "Offer updated successfully",
+      data: result.data,
+    });
+  } catch (error: any) {
+    console.error("Error in updateOfferController:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
