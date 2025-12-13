@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../constants";
 
-export function generateTokens(payload: { id: string; email: string }) {
+export function generateTokens(payload: { id: string; email: string, role: string }) {
   const accessToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn: "120m" });
   const refreshToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn: "7d" });
   return { accessToken, refreshToken };

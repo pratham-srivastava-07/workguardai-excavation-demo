@@ -6,12 +6,16 @@ import { SearchResults } from '@/components/map/search-results';
 import { PostDetail } from '@/components/map/post-detail';
 import { CreatePostForm } from '@/components/posts/create-post-form';
 import { MakeOfferModal } from '@/components/map/make-offer-modal';
+import { OrdersTab } from '@/components/dashboard-components/orders-tab';
+import { ProjectsOffersTab } from '@/components/dashboard-components/projects-offers-tab';
+import { HelpTab } from '@/components/dashboard-components/help-tab';
+import { MessagesTab } from '@/components/dashboard-components/messages-tab';
+import { WalletTab } from '@/components/dashboard-components/wallet-tab';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { API_BASE_URL } from '@/constants/env';
 
 interface Post {
   id: string;
@@ -28,6 +32,7 @@ interface Post {
   condition?: string;
   images?: string[];
   distance?: number;
+  userId?: string;
   user?: any;
   company?: any;
   city?: any;
@@ -145,6 +150,7 @@ function MapPageContent() {
 
       el.onclick = () => {
         setSelectedPost(post);
+        centerMap(post.latitude, post.longitude);
         setLeftPanelTitle('Post Details');
         setLeftPanelContent(
           <PostDetail
@@ -167,14 +173,14 @@ function MapPageContent() {
               // Show auth modal
               window.location.href = '/login';
             }}
+            showOfferButton={shouldShowOfferButton(post)}
           />
         );
         setShowLeftPanel(true);
-        mapRef.current?.flyTo({
-          center: [post.longitude, post.latitude],
-          zoom: 14,
-        });
       };
+      
+      // Add cursor pointer style
+      el.style.cursor = 'pointer';
 
       markersRef.current.push(marker);
     });
@@ -221,6 +227,7 @@ function MapPageContent() {
             loading={false}
             onPostClick={(post) => {
               setSelectedPost(post);
+              centerMap(post.latitude, post.longitude);
               setLeftPanelTitle('Post Details');
               setLeftPanelContent(
                 <PostDetail
@@ -233,6 +240,7 @@ function MapPageContent() {
                   onContact={handleContact}
                   onRequestPickup={handleRequestPickup}
                   isAuthenticated={true}
+                  showOfferButton={shouldShowOfferButton(post)}
                 />
               );
             }}
@@ -247,9 +255,32 @@ function MapPageContent() {
     }
   };
 
+  // Center map on coordinates
+  const centerMap = (lat: number, lng: number) => {
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [lng, lat],
+        zoom: 14,
+        duration: 1000,
+      });
+    }
+  };
+
   // Handle menu item clicks
   const handleMenuItemClick = async (item: string) => {
     setActiveMenuItem(item);
+    
+    if (item === 'map') {
+      // Map: collapse left panel
+      setShowLeftPanel(false);
+      setShowCreatePost(false);
+      setSelectedPost(null);
+      return;
+    }
+
+    // All other items: expand left panel
+    setShowLeftPanel(true);
+
     if (item === 'create-post') {
       handleCreatePost();
     } else if (item === 'posts') {
@@ -271,6 +302,7 @@ function MapPageContent() {
                 loading={false}
                 onPostClick={(post) => {
                   setSelectedPost(post);
+                  centerMap(post.latitude, post.longitude);
                   setLeftPanelTitle('Post Details');
                   setLeftPanelContent(
                     <PostDetail
@@ -283,20 +315,81 @@ function MapPageContent() {
                       onContact={(postId) => handleContact(postId)}
                       onRequestPickup={(postId) => handleRequestPickup(postId)}
                       isAuthenticated={true}
+                      showOfferButton={shouldShowOfferButton(post)}
                     />
                   );
                 }}
               />
             );
-            setShowLeftPanel(true);
           }
         } catch (error) {
           console.error('Error loading posts:', error);
         }
       }
-    } else if (item === 'map') {
-      setShowLeftPanel(false);
-      setShowCreatePost(false);
+    } else if (item === 'projects') {
+      setLeftPanelTitle('Projects / Offers');
+      setLeftPanelContent(
+        <ProjectsOffersTab
+          onItemClick={(item) => {
+            centerMap(item.lat, item.lng);
+          }}
+          onMapCenter={centerMap}
+        />
+      );
+    } else if (item === 'orders') {
+      // Only allow Company and City to access orders
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          if (user.role === 'HOMEOWNER') {
+            // Redirect homeowners away from orders
+            setShowLeftPanel(false);
+            return;
+          }
+        } catch {
+          // Invalid user data, allow access (will be checked on backend)
+        }
+      }
+      setLeftPanelTitle('Orders');
+      setLeftPanelContent(
+        <OrdersTab
+          onOrderClick={(order) => {
+            // Handle order click if needed
+          }}
+          onMapCenter={centerMap}
+        />
+      );
+    } else if (item === 'messages') {
+      setLeftPanelTitle('Messages');
+      setLeftPanelContent(<MessagesTab />);
+    } else if (item === 'wallet') {
+      setLeftPanelTitle('Wallet / Payments');
+      setLeftPanelContent(<WalletTab />);
+    } else if (item === 'help') {
+      setLeftPanelTitle('Help');
+      setLeftPanelContent(<HelpTab />);
+    }
+  };
+
+  // Check if user can make offer on this post (not their own)
+  const shouldShowOfferButton = (post: Post): boolean => {
+    const userData = localStorage.getItem('user');
+    if (!userData) return true; // Show button if not logged in (will require auth)
+    try {
+      const user = JSON.parse(userData);
+      // Check post.userId first (direct field)
+      if (post.userId) {
+        return post.userId !== user.id;
+      }
+      // Check if post has user object with id
+      if (post.user && post.user.id) {
+        return post.user.id !== user.id;
+      }
+      // Fallback: if post doesn't have user info, allow offer (will be checked on backend)
+      return true;
+    } catch {
+      return true;
     }
   };
 
@@ -403,7 +496,7 @@ function MapPageContent() {
       {/* Create Post Button - Prominent Floating CTA */}
       <Button
         onClick={handleCreatePost}
-        className="absolute bottom-6 right-6 z-50 rounded-full w-16 h-16 shadow-2xl bg-primary hover:bg-primary/90 text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center group"
+        className="absolute bottom-6 right-6 z-50 rounded-full w-16 h-16 shadow-2xl bg-primary hover:bg-primary/90 text-white transition-all hover:scale-110 active:scale-95 flex items-center justify-center group cursor-pointer"
         size="lg"
         title="Create New Post"
       >

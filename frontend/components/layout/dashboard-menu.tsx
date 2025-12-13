@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Map, Package, Briefcase, ShoppingCart, MessageSquare, Wallet, Settings, HelpCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,12 +10,12 @@ interface DashboardMenuProps {
   onItemClick?: (item: string) => void;
 }
 
-const menuItems = [
+const allMenuItems = [
   { id: 'map', label: 'Map', icon: Map },
   { id: 'create-post', label: 'Create Post', icon: Package, highlight: true },
   { id: 'posts', label: 'My Posts', icon: Package },
   { id: 'projects', label: 'Projects / Offers', icon: Briefcase },
-  { id: 'orders', label: 'Orders', icon: ShoppingCart },
+  { id: 'orders', label: 'Orders', icon: ShoppingCart, roles: ['COMPANY', 'CITY'] }, // Only for Company and City
   { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'wallet', label: 'Wallet / Payments', icon: Wallet },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -24,6 +24,33 @@ const menuItems = [
 
 export function DashboardMenu({ activeItem = 'map', onItemClick }: DashboardMenuProps) {
   const [collapsed, setCollapsed] = useState(false);
+
+  // Filter menu items based on user role
+  const menuItems = useMemo(() => {
+    const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    let userRole: string | null = null;
+    
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        userRole = user.role || null;
+      } catch {
+        // Invalid user data
+      }
+    }
+
+    // Filter out orders for homeowners
+    return allMenuItems.filter(item => {
+      if (item.id === 'orders') {
+        // Only show orders for COMPANY and CITY roles
+        if (item.roles) {
+          return item.roles.includes(userRole || '');
+        }
+        return userRole !== 'HOMEOWNER';
+      }
+      return true;
+    });
+  }, []);
 
   return (
     <div
@@ -38,7 +65,7 @@ export function DashboardMenu({ activeItem = 'map', onItemClick }: DashboardMenu
           variant="ghost"
           size="sm"
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1"
+          className="p-1 cursor-pointer"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
@@ -58,7 +85,7 @@ export function DashboardMenu({ activeItem = 'map', onItemClick }: DashboardMenu
               key={item.id}
               onClick={() => onItemClick?.(item.id)}
               className={cn(
-                'w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors',
+                'w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors cursor-pointer',
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : item.highlight

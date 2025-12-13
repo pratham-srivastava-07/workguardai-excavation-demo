@@ -95,7 +95,7 @@ export const refreshTokenController = async (req: Request, res: Response) => {
     }
 
     // Verify refresh token
-    const decoded = verifyRefreshToken(refreshToken) as { 
+    const decoded: any = verifyRefreshToken(refreshToken) as { 
       id: string; 
       email: string 
     };
@@ -103,7 +103,8 @@ export const refreshTokenController = async (req: Request, res: Response) => {
     // Generate new tokens
     const tokens = generateTokens({ 
       id: decoded.id, 
-      email: decoded.email 
+      email: decoded.email,
+      role: decoded.role
     });
 
     return res.status(200).json(tokens);

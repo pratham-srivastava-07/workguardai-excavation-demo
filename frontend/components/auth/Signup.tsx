@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { API_AUTH_URL } from "@/constants/env"
 
 export const SignupForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -38,8 +39,7 @@ export const SignupForm: React.FC = () => {
     setMessage("")
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      const res = await fetch(`${API_AUTH_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

@@ -1,61 +1,69 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Home, MapPin, Package, Briefcase, DollarSign, Calendar } from "lucide-react"
+import { API_BASE_URL } from "@/constants/env";
 
 export default function HomeownerDashboard() {
   const router = useRouter()
-
-  // Mock data - replace with actual API calls
-  const [stats] = useState({
-    activeProjects: 3,
-    totalPosts: 12,
-    pendingOffers: 5,
-    completedProjects: 8,
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    activeProjects: 0,
+    totalPosts: 0,
+    pendingOffers: 0,
+    completedProjects: 0,
   })
+  const [recentProjects, setRecentProjects] = useState<any[]>([])
+  const [recentPosts, setRecentPosts] = useState<any[]>([])
 
-  const [recentProjects] = useState([
-    {
-      id: "1",
-      title: "Kitchen Renovation",
-      status: "IN_PROGRESS",
-      budgetMin: 5000,
-      budgetMax: 8000,
-      size: 25,
-    },
-    {
-      id: "2",
-      title: "Bathroom Remodel",
-      status: "OPEN",
-      budgetMin: 3000,
-      budgetMax: 5000,
-      size: 15,
-    },
-  ])
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('accessToken')
+        if (!token) {
+          router.push('/login')
+          return
+        }
 
-  const [recentPosts] = useState([
-    {
-      id: "1",
-      title: "Used Floor Tiles",
-      type: "MATERIAL",
-      status: "AVAILABLE",
-      quantity: 50,
-      unit: "pieces",
-    },
-    {
-      id: "2",
-      title: "Wooden Planks",
-      type: "MATERIAL",
-      status: "RESERVED",
-      quantity: 20,
-      unit: "m²",
-    },
-  ])
+        const response = await fetch(`${API_BASE_URL}/api/v1/dashboard/stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data')
+        }
+
+        const data = await response.json()
+        setStats(data.stats)
+        setRecentProjects(data.recentProjects || [])
+        setRecentPosts(data.recentPosts || [])
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -70,7 +78,7 @@ export default function HomeownerDashboard() {
                 <p className="text-sm text-gray-400">Manage your projects and materials</p>
               </div>
             </div>
-            <Button onClick={() => router.push("/map")} size="lg" className="bg-white text-black hover:bg-gray-200">
+            <Button onClick={() => router.push("/map")} size="lg" className="bg-white text-black hover:bg-gray-200 cursor-pointer">
               <MapPin className="mr-2 h-4 w-4" />
               Explore Map
             </Button>
@@ -135,26 +143,32 @@ export default function HomeownerDashboard() {
               <CardDescription className="text-gray-400">Your latest renovation projects</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentProjects.map((project) => (
-                <div key={project.id} className="flex flex-col gap-2 p-4 rounded-lg bg-gray-800 border border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-white">{project.title}</h3>
-                    <Badge
-                      variant={project.status === "IN_PROGRESS" ? "default" : "secondary"}
-                      className="bg-gray-700 text-white"
-                    >
-                      {project.status.replace("_", " ")}
-                    </Badge>
+              {recentProjects.length === 0 ? (
+                <p className="text-gray-400 text-center py-4">No projects yet</p>
+              ) : (
+                recentProjects.map((project) => (
+                  <div key={project.id} className="flex flex-col gap-2 p-4 rounded-lg bg-gray-800 border border-gray-700 cursor-pointer hover:bg-gray-750">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-white">{project.title}</h3>
+                      <Badge
+                        variant={project.status === "IN_PROGRESS" ? "default" : "secondary"}
+                        className="bg-gray-700 text-white"
+                      >
+                        {project.status.replace("_", " ")}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-4 text-sm text-gray-400">
+                      {project.size && <span>Size: {project.size}m²</span>}
+                      {project.size && project.budgetMin && <Separator orientation="vertical" className="h-4 bg-gray-600" />}
+                      {project.budgetMin && project.budgetMax && (
+                        <span>
+                          Budget: ${project.budgetMin.toLocaleString()} - ${project.budgetMax.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-4 text-sm text-gray-400">
-                    <span>Size: {project.size}m²</span>
-                    <Separator orientation="vertical" className="h-4 bg-gray-600" />
-                    <span>
-                      Budget: ${project.budgetMin.toLocaleString()} - ${project.budgetMax.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -165,26 +179,34 @@ export default function HomeownerDashboard() {
               <CardDescription className="text-gray-400">Materials you've listed</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentPosts.map((post) => (
-                <div key={post.id} className="flex flex-col gap-2 p-4 rounded-lg bg-gray-800 border border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-white">{post.title}</h3>
-                    <Badge
-                      variant={post.status === "AVAILABLE" ? "default" : "secondary"}
-                      className="bg-gray-700 text-white"
-                    >
-                      {post.status}
-                    </Badge>
+              {recentPosts.length === 0 ? (
+                <p className="text-gray-400 text-center py-4">No posts yet</p>
+              ) : (
+                recentPosts.map((post) => (
+                  <div key={post.id} className="flex flex-col gap-2 p-4 rounded-lg bg-gray-800 border border-gray-700 cursor-pointer hover:bg-gray-750">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-white">{post.title}</h3>
+                      <Badge
+                        variant={post.status === "AVAILABLE" ? "default" : "secondary"}
+                        className="bg-gray-700 text-white"
+                      >
+                        {post.status}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-4 text-sm text-gray-400">
+                      <span>Type: {post.type}</span>
+                      {post.quantity && (
+                        <>
+                          <Separator orientation="vertical" className="h-4 bg-gray-600" />
+                          <span>
+                            Quantity: {post.quantity} {post.unit || 'units'}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-4 text-sm text-gray-400">
-                    <span>Type: {post.type}</span>
-                    <Separator orientation="vertical" className="h-4 bg-gray-600" />
-                    <span>
-                      Quantity: {post.quantity} {post.unit}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

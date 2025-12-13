@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '@/constants/env';
 
 interface MakeOfferModalProps {
   open: boolean;
@@ -23,8 +24,6 @@ interface MakeOfferModalProps {
   currentPrice?: number;
   onSuccess?: () => void;
 }
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export function MakeOfferModal({
   open,

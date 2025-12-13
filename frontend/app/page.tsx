@@ -62,7 +62,7 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white/20 text-black hover:text-white hover:bg-white/10 text-lg px-8"
+                className="border-white/20  hover:text-white text-white hover:bg-white/10 text-lg px-8"
                 asChild
               >
                 <Link href="/map">Explore Map</Link>
@@ -169,6 +169,7 @@ export default function Home() {
               </p>
             </motion.div>
 
+           {!isLoggedIn && <>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -183,6 +184,7 @@ export default function Home() {
                 <Link href="/signup">Sign Up Now</Link>
               </Button>
             </motion.div>
+           </>}
           </div>
         </section>
       </main>

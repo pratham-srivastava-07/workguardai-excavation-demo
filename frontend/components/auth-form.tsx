@@ -99,7 +99,7 @@ export function AuthForm({ type }: AuthFormProps) {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
             <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-accent" />
+              <Building2 className="w-6 h-6 text-white" />
             </div>
           </Link>
           <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -232,7 +232,7 @@ export function AuthForm({ type }: AuthFormProps) {
           </form>
 
           {/* Auth Link */}
-          <div className="mt-6 text-center text-sm text-muted-foreground">
+          <div className="mt-6 text-center text-sm text-white">
             {type === 'signin' ? (
               <>
                 Don't have an account?{' '}
@@ -278,13 +278,13 @@ export function AuthForm({ type }: AuthFormProps) {
         </Card>
 
         {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        <p className="text-center text-xs text-white mt-6">
           By signing {type === 'signin' ? 'in' : 'up'}, you agree to our{' '}
-          <Link href="/terms" className="text-accent hover:text-accent/80">
+          <Link href="/terms" className="text-blue-600">
             Terms of Service
           </Link>{' '}
           and{' '}
-          <Link href="/privacy" className="text-accent hover:text-accent/80">
+          <Link href="/privacy" className="text-blue-600">
             Privacy Policy
           </Link>
         </p>

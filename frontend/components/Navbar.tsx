@@ -20,15 +20,15 @@ export function Navbar() {
 
   return (
     <motion.nav
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-700 ${
         scrolled ? 'bg-black/90 backdrop-blur-md border-b border-white/10' : 'bg-transparent'
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.5 }}
     >
       <div
-        className={`container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center transition-all duration-300 ${
+        className={`container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center transition-all duration-700 ${
           scrolled ? 'justify-center gap-8' : 'justify-between'
         }`}
       >
@@ -52,7 +52,7 @@ export function Navbar() {
           {!isLoggedIn && <>
            <Button
             variant="outline"
-            className="border-white/20 text-black hover:bg-white/10 hover:text-white"
+            className="border-white/20 text-white  hover:bg-white/10 hover:text-white"
             asChild
           >
             <Link href="/login">Login</Link>

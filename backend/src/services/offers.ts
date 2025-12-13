@@ -175,3 +175,68 @@ export async function updateOfferStatus(
   }
 }
 
+export async function updateOffer(
+  offerId: string,
+  userId: string,
+  updates: { amount?: number; message?: string }
+) {
+  try {
+    const offer = await prismaClient.offer.findUnique({
+      where: { id: offerId },
+      select: {
+        id: true,
+        userId: true,
+        companyId: true,
+        status: true,
+      },
+    });
+
+    if (!offer) {
+      return { error: "Offer not found" };
+    }
+
+    // Only offer creator can modify it
+    if (offer.userId !== userId && offer.companyId !== userId) {
+      return { error: "Unauthorized: You don't own this offer" };
+    }
+
+    // Can only modify pending offers
+    if (offer.status !== OfferStatus.PENDING) {
+      return { error: "Can only modify pending offers" };
+    }
+
+    const updatedOffer = await prismaClient.offer.update({
+      where: { id: offerId },
+      data: updates,
+      include: {
+        post: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        company: {
+          select: {
+            id: true,
+            companyName: true,
+            logoUrl: true,
+          },
+        },
+      },
+    });
+
+    return { data: updatedOffer };
+  } catch (error: any) {
+    console.error("Error updating offer:", error);
+    return { error: `Error updating offer: ${error.message}` };
+  }
+}
+

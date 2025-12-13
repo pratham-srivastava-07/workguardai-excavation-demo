@@ -5,6 +5,7 @@ import { X, MapPin, Package, DollarSign, Calendar, User, MessageSquare, Heart, S
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { getImageArray } from '@/utils/imageHelper';
 
 interface Post {
   id: string;
@@ -59,6 +60,7 @@ export function PostDetail({
   showOfferButton = true,
 }: PostDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const images = getImageArray(post.images);
 
   const handleAction = (action: () => void) => {
     if (!isAuthenticated) {
@@ -107,22 +109,26 @@ export function PostDetail({
       </div>
 
       {/* Images */}
-      {post.images && post.images.length > 0 && (
+      {images.length > 0 && (
         <div className="relative">
           <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
             <img
-              src={post.images[currentImageIndex]}
+              src={images[currentImageIndex]}
               alt={post.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback if image fails to load
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x600?text=Image+Not+Available';
+              }}
             />
           </div>
-          {post.images.length > 1 && (
+          {images.length > 1 && (
             <div className="flex items-center justify-center space-x-2 mt-3">
-              {post.images.map((_, index) => (
+              {images.map((_, index: number) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
                     index === currentImageIndex 
                       ? 'bg-primary w-6' 
                       : 'bg-gray-700 hover:bg-gray-600'
@@ -234,16 +240,26 @@ export function PostDetail({
       <div className="flex flex-col space-y-2 pt-4 border-t border-gray-800">
         {showOfferButton && (
           <Button
-            className="w-full bg-primary hover:bg-primary/90"
+            className="w-full bg-primary hover:bg-primary/90 cursor-pointer"
             onClick={() => handleAction(() => onMakeOffer?.(post.id))}
           >
             Make an Offer
+          </Button>
+        )}
+        {!showOfferButton && (
+          <Button
+            className="w-full bg-gray-700 hover:bg-gray-700 cursor-not-allowed"
+            disabled
+            title="You cannot make an offer on your own post"
+          >
+            Make an Offer (Your Post)
           </Button>
         )}
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
             onClick={() => handleAction(() => onContact?.(post.id))}
+            className="cursor-pointer"
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             Contact
@@ -252,17 +268,18 @@ export function PostDetail({
             <Button
               variant="outline"
               onClick={() => handleAction(() => onRequestPickup?.(post.id))}
+              className="cursor-pointer"
             >
               Request Pickup
             </Button>
           )}
         </div>
         <div className="flex items-center justify-center space-x-4 pt-2">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="cursor-pointer">
             <Heart className="w-4 h-4 mr-2" />
             Save
           </Button>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="cursor-pointer">
             <Share2 className="w-4 h-4 mr-2" />
             Share
           </Button>
