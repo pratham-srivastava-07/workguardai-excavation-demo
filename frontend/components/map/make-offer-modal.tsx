@@ -76,7 +76,7 @@ export function MakeOfferModal({
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/posts/${postId}/offers`, {
+      const response = await fetch(`${API_BASE_URL}/posts/${postId}/offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

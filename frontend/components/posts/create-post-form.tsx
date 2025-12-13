@@ -382,9 +382,9 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       if (dailyRate) formData.append('dailyRate', (Math.round(parseFloat(dailyRate) * 100)).toString());
       if (rentalDuration) formData.append('rentalDuration', rentalDuration);
 
-      setDebugInfo(`Sending multipart request to ${API_BASE_URL}/api/v1/posts`);
+      setDebugInfo(`Sending multipart request to ${API_BASE_URL}/posts`);
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/posts`, {
+      const response = await fetch(`${API_BASE_URL}/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

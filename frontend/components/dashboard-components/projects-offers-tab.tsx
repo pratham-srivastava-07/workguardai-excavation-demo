@@ -94,7 +94,7 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter }: ProjectsOffersTa
           setUserRole(user.role || '');
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/projects-offers`, {
+        const response = await fetch(`${API_BASE_URL}/projects-offers`, {
           headers: {
             "Content-Type": "application/json",
             'Authorization': `Bearer ${token}`,
