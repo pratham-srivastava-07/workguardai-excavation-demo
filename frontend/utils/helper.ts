@@ -1,8 +1,7 @@
 export default async function loginUser(email: any, password: any) {
     try {
-        console.log("Indide try");
-        
-        const res = await fetch("http://localhost:3001/api/auth/login", {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: "POST",
             headers: {
                 "Content-Type": 'application/json',
@@ -13,35 +12,32 @@ export default async function loginUser(email: any, password: any) {
             })
         })
 
-        console.log("Responnse done", res);
-        
-
         return res;
     } catch(loginError) {
         console.log(`Error occured during login`, loginError)
+        throw loginError;
     }
 }
 
 export async function signupUser(name: any, email: any, password: any, role: any) {
     try {
-        const response = await fetch("http://localhost:3001/api/auth/signup", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            name: name,
-            email: email,
-            password: password,
-            role: role.toUpperCase()
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: name,
+                email: email,
+                password: password,
+                role: role
+            })
         })
-    })
 
-    console.log("WHATS THE RESPONSE", response);
-    
-
-    return response;
+        return response;
     } catch(signupError) {
         console.log("Signup error", signupError)
+        throw signupError;
     }
 }

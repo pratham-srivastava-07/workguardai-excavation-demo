@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { MapPin, Hammer, Package, Building2 } from 'lucide-react';
+import { Package, Building2, Hammer } from 'lucide-react';
 
 export default function Home() {
   return (

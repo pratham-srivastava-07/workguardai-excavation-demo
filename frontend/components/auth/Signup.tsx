@@ -38,7 +38,8 @@ export const SignupForm: React.FC = () => {
     setMessage("")
 
     try {
-      const res = await fetch("/api/auth/signup", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -47,7 +48,17 @@ export const SignupForm: React.FC = () => {
 
       if (!res.ok) throw new Error(data.message || "Signup failed")
 
-      setMessage("Signup successful! You can now login.")
+      // Save tokens and user data
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      setMessage("Signup successful! Redirecting...")
+      
+      // Redirect to map
+      setTimeout(() => {
+        window.location.href = '/map';
+      }, 500);
     } catch (err: any) {
       setMessage(err.message)
     } finally {
@@ -155,8 +166,11 @@ export const SignupForm: React.FC = () => {
                     <SelectItem value="HOMEOWNER" className="text-white hover:bg-gray-700">
                       Homeowner
                     </SelectItem>
-                    <SelectItem value="CONTRACTOR" className="text-white hover:bg-gray-700">
-                      Contractor
+                    <SelectItem value="COMPANY" className="text-white hover:bg-gray-700">
+                      Company
+                    </SelectItem>
+                    <SelectItem value="CITY" className="text-white hover:bg-gray-700">
+                      City
                     </SelectItem>
                   </SelectContent>
                 </Select>

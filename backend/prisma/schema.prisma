@@ -9,7 +9,8 @@ datasource db {
 
 enum Role {
   HOMEOWNER
-  CONTRACTOR
+  COMPANY
+  CITY
 }
 
 enum QuoteStatus {
@@ -32,6 +33,26 @@ enum PaymentStatus {
   OVERDUE
 }
 
+enum PostType {
+  MATERIAL
+  SERVICE
+  SPACE
+}
+
+enum PostStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  DELETED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
 model User {
   id        String              @id @default(cuid())
   email     String              @unique
@@ -43,7 +64,11 @@ model User {
 
   // relations
   contractorProfile ContractorProfile?
+  companyProfile    CompanyProfile?
+  cityProfile       CityProfile?
   projects          Project[]           @relation("HomeownerProjects")
+  posts             Post[]
+  offers            Offer[]             @relation("UserOffers")
   refreshToken      RefreshToken[]
 }
 
@@ -151,6 +176,140 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
+}
+
+model CompanyProfile {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  companyName String
+  description String?
+  logoUrl     String?
+  verified    Boolean  @default(false)
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // relations
+  posts       Post[]
+  offers      Offer[]  @relation("CompanyOffers")
+}
+
+model CityProfile {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  cityName    String
+  description String?
+  logoUrl     String?
+  verified    Boolean  @default(false)
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // relations
+  posts       Post[]
+}
+
+model Post {
+  id            String      @id @default(cuid())
+  type          PostType
+  status        PostStatus  @default(AVAILABLE)
+  
+  // Who posted it
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  company       CompanyProfile? @relation(fields: [companyId], references: [id])
+  companyId     String?
+  city          CityProfile? @relation(fields: [cityId], references: [id])
+  cityId        String?
+
+  // Basic info
+  title         String
+  description   String?
+  images        Json?       // array of image URLs
+  
+  // Subtype (e.g., "window", "tiles", "transport", "coworking")
+  subtype       String
+  
+  // Quantity and pricing
+  quantity      Float?
+  unit          String?     // m², m³, pieces, liters, kilograms
+  price         Int?        // price in cents
+  
+  // Location (required for map)
+  latitude      Float
+  longitude     Float
+  address       String?
+  
+  // Availability and condition
+  availabilityDate DateTime?
+  condition     String?     // new/used/damaged
+  rentalDuration String?    // for spaces
+  
+  // Service/Rental specific
+  hourlyRate    Int?        // for services/rentals
+  dailyRate     Int?        // for services/rentals
+  
+  // Additional options
+  pickupAllowed Boolean     @default(false)
+  transportNeeded Boolean   @default(false)
+  canCompanyCollect Boolean @default(false)
+  permitForReuse Boolean    @default(false)
+  hazardousMaterials Boolean @default(false)
+  structuralItems Boolean   @default(false)
+  
+  // Social
+  socialLink    String?     // Instagram/share link
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // relations
+  offers        Offer[]
+  auditLogs     PostAuditLog[]
+
+  @@index([latitude, longitude])
+  @@index([type, status])
+  @@index([userId])
+}
+
+model Offer {
+  id          String      @id @default(cuid())
+  post        Post        @relation(fields: [postId], references: [id])
+  postId     String
+  
+  // Who made the offer
+  user        User        @relation("UserOffers", fields: [userId], references: [id])
+  userId      String
+  company     CompanyProfile? @relation("CompanyOffers", fields: [companyId], references: [id])
+  companyId   String?
+  
+  amount      Int?        // offer amount in cents
+  message     String?
+  status      OfferStatus @default(PENDING)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model PostAuditLog {
+  id          String   @id @default(cuid())
+  post        Post     @relation(fields: [postId], references: [id])
+  postId      String
+  
+  userId      String   // who made the change
+  action      String   // "CREATE", "UPDATE", "DELETE", "STATUS_CHANGE"
+  fieldName   String?  // which field was changed
+  oldValue    String?  // old value (JSON stringified if complex)
+  newValue    String?  // new value (JSON stringified if complex)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([postId])
+  @@index([userId])
 }
 
 

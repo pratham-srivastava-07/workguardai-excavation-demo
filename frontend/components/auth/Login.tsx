@@ -31,7 +31,8 @@ export const LoginForm: React.FC = () => {
     setMessage("")
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -40,8 +41,21 @@ export const LoginForm: React.FC = () => {
 
       if (!res.ok) throw new Error(data.message || "Login failed")
 
+      // Save tokens and user data
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
       setMessage("Login successful! Redirecting...")
-      // Redirect logic would go here
+      
+      // Redirect based on URL params or default to map
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect') || '/map';
+      
+      // Use window.location for full page reload to ensure auth state is refreshed
+      setTimeout(() => {
+        window.location.href = redirect;
+      }, 500);
     } catch (err: any) {
       setMessage(err.message)
     } finally {

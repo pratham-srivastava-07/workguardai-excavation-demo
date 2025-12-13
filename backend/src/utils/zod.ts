@@ -4,7 +4,7 @@ export const signupBody = zod.object({
     name: zod.string(),
     email: zod.email(),
     password: zod.string().min(6),
-    role: zod.enum(["HOMEOWNER", "CONTRACTOR"]).optional(),
+    role: zod.enum(["HOMEOWNER", "COMPANY", "CITY"]).optional(),
 })
 
 export type SignupBody = zod.infer<typeof signupBody>;
@@ -120,4 +120,81 @@ export const quoteStatusUpdateSchema = zod.object({
   status: zod.enum(["ACCEPTED", "REJECTED"], {
     message: "Invalid project type"
   })
+});
+
+// Post creation schema
+export const postCreateSchema = zod.object({
+  type: zod.enum(["MATERIAL", "SERVICE", "SPACE"]),
+  title: zod.string().min(3, "Title must be at least 3 characters").max(200),
+  description: zod.string().max(2000).optional(),
+  subtype: zod.string().min(1, "Subtype is required"),
+  quantity: zod.number().min(0.01).optional(),
+  unit: zod.string().optional(),
+  price: zod.number().min(0).optional(),
+  latitude: zod.number().min(-90).max(90),
+  longitude: zod.number().min(-180).max(180),
+  address: zod.string().optional(),
+  availabilityDate: zod.string().datetime().optional(),
+  condition: zod.string().optional(),
+  rentalDuration: zod.string().optional(),
+  hourlyRate: zod.number().min(0).optional(),
+  dailyRate: zod.number().min(0).optional(),
+  pickupAllowed: zod.boolean().default(false),
+  transportNeeded: zod.boolean().default(false),
+  canCompanyCollect: zod.boolean().default(false),
+  permitForReuse: zod.boolean().default(false),
+  hazardousMaterials: zod.boolean().default(false),
+  structuralItems: zod.boolean().default(false),
+  socialLink: zod.string().url().optional().or(zod.literal("")),
+  images: zod.array(zod.string().url()).min(2, "At least 2 images required").max(6, "Maximum 6 images allowed"),
+  companyId: zod.string().optional(),
+  cityId: zod.string().optional(),
+});
+
+// Post update schema
+export const postUpdateSchema = zod.object({
+  title: zod.string().min(3).max(200).optional(),
+  description: zod.string().max(2000).optional(),
+  quantity: zod.number().min(0.01).optional(),
+  unit: zod.string().optional(),
+  price: zod.number().min(0).optional(),
+  latitude: zod.number().min(-90).max(90).optional(),
+  longitude: zod.number().min(-180).max(180).optional(),
+  address: zod.string().optional(),
+  availabilityDate: zod.string().datetime().optional(),
+  condition: zod.string().optional(),
+  rentalDuration: zod.string().optional(),
+  hourlyRate: zod.number().min(0).optional(),
+  dailyRate: zod.number().min(0).optional(),
+  pickupAllowed: zod.boolean().optional(),
+  transportNeeded: zod.boolean().optional(),
+  canCompanyCollect: zod.boolean().optional(),
+  permitForReuse: zod.boolean().optional(),
+  hazardousMaterials: zod.boolean().optional(),
+  structuralItems: zod.boolean().optional(),
+  socialLink: zod.string().url().optional().or(zod.literal("")),
+  images: zod.array(zod.string().url()).max(6).optional(),
+  status: zod.enum(["AVAILABLE", "RESERVED", "SOLD", "DELETED"]).optional(),
+});
+
+// Post search schema
+export const postSearchSchema = zod.object({
+  query: zod.string().optional(),
+  type: zod.enum(["MATERIAL", "SERVICE", "SPACE"]).optional(),
+  subtype: zod.string().optional(),
+  latitude: zod.number().min(-90).max(90).optional(),
+  longitude: zod.number().min(-180).max(180).optional(),
+  radius: zod.number().min(0).max(1000).default(50), // km
+  minPrice: zod.number().min(0).optional(),
+  maxPrice: zod.number().min(0).optional(),
+  condition: zod.string().optional(),
+  page: zod.number().min(1).default(1),
+  limit: zod.number().min(1).max(100).default(20),
+});
+
+// Offer creation schema
+export const offerCreateSchema = zod.object({
+  postId: zod.string().cuid(),
+  amount: zod.number().min(0).optional(),
+  message: zod.string().max(1000).optional(),
 });

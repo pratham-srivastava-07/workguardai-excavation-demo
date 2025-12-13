@@ -17,7 +17,7 @@ export function AuthForm({ type }: AuthFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [role, setRole] = useState<'homeowner' | 'contractor'>('homeowner')
+  const [role, setRole] = useState<'HOMEOWNER' | 'COMPANY' | 'CITY'>('HOMEOWNER')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null);
   const router = useRouter()
@@ -31,44 +31,65 @@ export function AuthForm({ type }: AuthFormProps) {
   }
 
  const handleLogin = async () => {
-  setError(null); // reset error
+  setError(null);
+  setIsLoading(true);
 
-  const response = await loginUser(email, password);
+  try {
+    const response = await loginUser(email, password);
 
-  if (!response || !response.ok) {
-    const err = await response?.json();
+    if (!response || !response.ok) {
+      const err = await response?.json();
+      setError(err?.message || "Login failed");
+      setIsLoading(false);
+      return;
+    }
+
+    const data = await response.json();
+    
+    // Save tokens and user data
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    // Get redirect from URL or default to map
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect') || '/map';
+    
+    // Use window.location for full page reload
+    window.location.href = redirect;
+  } catch (err: any) {
     setError(err?.message || "Login failed");
-    return; // stop navigation
+    setIsLoading(false);
   }
-
-  const data = await response.json();
-  console.log("RESPONSE", data);
-
-  router.push(
-    data.user.role === "CONTRACTOR"
-      ? "/contractor-dashboard"
-      : "/homeowner-dashboard"
-  );
 };
 
   const handleSignup = async () => {
   setError(null);
+  setIsLoading(true);
 
-  const response = await signupUser(name, email, password, role);
+  try {
+    const response = await signupUser(name, email, password, role);
 
-  if (!response || !response.ok) {
-    const err = await response?.json();
+    if (!response || !response.ok) {
+      const err = await response?.json();
+      setError(err?.message || "Signup failed");
+      setIsLoading(false);
+      return;
+    }
+
+    const data = await response.json();
+    
+    // Save tokens and user data
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    // Redirect to map
+    window.location.href = '/map';
+  } catch (err: any) {
     setError(err?.message || "Signup failed");
-    return;
+    setIsLoading(false);
   }
-
-  const data = await response.json();
-
-  router.push(
-    data.user.role === "CONTRACTOR"
-      ? "/contractor-dashboard"
-      : "/homeowner-dashboard"
-  );
 };
 
   return (
@@ -93,11 +114,12 @@ export function AuthForm({ type }: AuthFormProps) {
 
         {/* Role Selection for Signup */}
         {type === 'signup' && (
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-3 mb-6">
             <button
-              onClick={() => setRole('homeowner')}
+              type="button"
+              onClick={() => setRole('HOMEOWNER')}
               className={`p-4 rounded-lg border-2 transition-colors ${
-                role === 'homeowner'
+                role === 'HOMEOWNER'
                   ? 'border-primary bg-primary/10'
                   : 'border-border/50 hover:border-border'
               }`}
@@ -106,15 +128,28 @@ export function AuthForm({ type }: AuthFormProps) {
               <p className="text-sm font-medium text-foreground">Homeowner</p>
             </button>
             <button
-              onClick={() => setRole('contractor')}
+              type="button"
+              onClick={() => setRole('COMPANY')}
               className={`p-4 rounded-lg border-2 transition-colors ${
-                role === 'contractor'
+                role === 'COMPANY'
                   ? 'border-primary bg-primary/10'
                   : 'border-border/50 hover:border-border'
               }`}
             >
               <Building2 className="w-5 h-5 mx-auto mb-2 text-accent" />
-              <p className="text-sm font-medium text-foreground">Contractor</p>
+              <p className="text-sm font-medium text-foreground">Company</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('CITY')}
+              className={`p-4 rounded-lg border-2 transition-colors ${
+                role === 'CITY'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border/50 hover:border-border'
+              }`}
+            >
+              <Building2 className="w-5 h-5 mx-auto mb-2 text-accent" />
+              <p className="text-sm font-medium text-foreground">City</p>
             </button>
           </div>
         )}
@@ -208,7 +243,7 @@ export function AuthForm({ type }: AuthFormProps) {
             ) : (
               <>
                 Already have an account?{' '}
-                <Link href="/signin" className="text-accent hover:text-accent/80 font-medium">
+                <Link href="/login" className="text-accent hover:text-accent/80 font-medium">
                   Sign in
                 </Link>
               </>
