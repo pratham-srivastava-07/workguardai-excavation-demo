@@ -22,6 +22,7 @@ describe('PostDetail', () => {
   it('should hide Make Offer button for own post', () => {
     const { container } = render(
       <PostDetail
+      //@ts-ignore
         post={{ ...mockPost, userId: 'user1' }}
         showOfferButton={false}
         isAuthenticated={true}
@@ -34,6 +35,7 @@ describe('PostDetail', () => {
   it('should show Make Offer button for other user post', () => {
     render(
       <PostDetail
+      //
         post={{ ...mockPost, userId: 'user2' }}
         showOfferButton={true}
         isAuthenticated={true}
