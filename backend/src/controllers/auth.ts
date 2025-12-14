@@ -3,6 +3,7 @@ import { signinBody, signupBody } from "../utils/zod";
 import { signupService } from "../services/signup";
 import { signinService } from "../services/signin";
 import { generateTokens, verifyRefreshToken } from "../utils/authUtils";
+import { prismaClient } from "../db";
 
 export default async function signupController(req: Request, res: Response) {
   const parsedBody = signupBody.safeParse(req.body);
@@ -100,11 +101,21 @@ export const refreshTokenController = async (req: Request, res: Response) => {
       email: string 
     };
     
-    // Generate new tokens
+    // Get the latest user data including role
+    const user = await prismaClient.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, role: true }
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Generate new tokens with updated user data
     const tokens = generateTokens({ 
-      id: decoded.id, 
-      email: decoded.email,
-      role: decoded.role
+      id: user.id, 
+      email: user.email,
+      role: user.role
     });
 
     return res.status(200).json(tokens);

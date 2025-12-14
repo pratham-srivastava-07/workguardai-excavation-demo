@@ -1,6 +1,7 @@
 // utils/tokenManager.ts
-import { API_AUTH_URL } from '@/constants/env';
 import { jwtDecode } from 'jwt-decode';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 interface DecodedToken {
   id: string;
@@ -14,7 +15,8 @@ export const isTokenExpired = (token: string): boolean => {
     const currentTime = Date.now() / 1000;
     // Check if token expires in less than 5 minutes
     return decoded.exp < currentTime + 300;
-  } catch {
+  } catch (error) {
+    console.error('Error decoding token:', error);
     return true;
   }
 };
@@ -27,9 +29,13 @@ export const refreshAccessToken = async (): Promise<string | null> => {
       return null;
     }
 
-    const response = await fetch(`${API_AUTH_URL}/api/auth/refresh`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${refreshToken}`
+      },
+      credentials: 'include',
       body: JSON.stringify({ refreshToken }),
     });
 
