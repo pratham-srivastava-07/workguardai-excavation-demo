@@ -7,10 +7,15 @@ import {
 
 export async function getDashboardStatsController(req: Request, res: Response) {
   try {
+    console.log("REACHED CONTROLLER");
+    
     const user = (req as any).user;
+    console.log("USER IN DASHBOARD STATS", user)
     if (!user || !user.id) {
       return res.status(401).json({ error: "Unauthorized" });
     }
+    console.log("REACHED AFTER USER CHK");
+    
 
     const role = user.role;
 

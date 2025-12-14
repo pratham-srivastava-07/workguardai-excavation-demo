@@ -32,6 +32,7 @@ export default function HomeownerDashboard() {
 
         const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
           headers: {
+            "Content-Type": "application/json",
             'Authorization': `Bearer ${token}`,
           },
         })
@@ -41,6 +42,7 @@ export default function HomeownerDashboard() {
         }
 
         const data = await response.json()
+        console.log("RESPONSE DATA", data)
         setStats(data.stats)
         setRecentProjects(data.recentProjects || [])
         setRecentPosts(data.recentPosts || [])

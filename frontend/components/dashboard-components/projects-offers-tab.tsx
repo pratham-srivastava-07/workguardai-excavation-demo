@@ -7,24 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, Briefcase, DollarSign, Calendar, Plus } from 'lucide-react';
 import { MakeOfferModal } from '@/components/map/make-offer-modal';
+import { OfferActions } from '@/components/offers/offer-actions';
 import { API_BASE_URL } from '@/constants/env';
+import type { Project, Offer, Post } from '@/types';
 
-interface Project {
-  id: string;
-  title: string;
-  status: string;
-  budgetMin?: number;
-  budgetMax?: number;
-  size?: number;
-  createdAt: string;
+interface ExtendedPost extends Post {
+  type: string;
+  subtype?: string;
+  price?: number;
+  quantity?: number;
+  unit?: string;
+  condition?: string;
+  images?: any;
+  user: {
+    id: string;
+    name?: string;
+    email: string;
+    role: 'HOMEOWNER' | 'COMPANY' | 'CITY';
+  };
 }
 
-interface Offer {
-  id: string;
-  amount?: number;
-  message?: string;
-  status: string;
-  createdAt: string;
+interface ExtendedOffer extends Omit<Offer, 'post' | 'user' | 'company'> {
   post: {
     id: string;
     title: string;
@@ -37,33 +40,12 @@ interface Offer {
     id: string;
     name?: string;
     email: string;
+    role: 'HOMEOWNER' | 'COMPANY' | 'CITY';
   };
   company?: {
     id: string;
     companyName: string;
     logoUrl?: string;
-  };
-}
-
-interface Post {
-  id: string;
-  title: string;
-  type: string;
-  subtype: string;
-  latitude: number;
-  longitude: number;
-  address?: string;
-  price?: number;
-  quantity?: number;
-  unit?: string;
-  condition?: string;
-  images?: any;
-  createdAt: string;
-  user: {
-    id: string;
-    name?: string;
-    email: string;
-    role: string;
   };
 }
 
@@ -75,12 +57,12 @@ interface ProjectsOffersTabProps {
 export function ProjectsOffersTab({ onItemClick, onMapCenter }: ProjectsOffersTabProps) {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [offersMade, setOffersMade] = useState<Offer[]>([]);
-  const [offersReceived, setOffersReceived] = useState<Offer[]>([]);
-  const [availablePosts, setAvailablePosts] = useState<Post[]>([]);
+  const [offersMade, setOffersMade] = useState<ExtendedOffer[]>([]);
+  const [offersReceived, setOffersReceived] = useState<ExtendedOffer[]>([]);
+  const [availablePosts, setAvailablePosts] = useState<ExtendedPost[]>([]);
   const [userRole, setUserRole] = useState<string>('');
   const [showOfferModal, setShowOfferModal] = useState(false);
-  const [selectedPostForOffer, setSelectedPostForOffer] = useState<Post | null>(null);
+  const [selectedPostForOffer, setSelectedPostForOffer] = useState<ExtendedPost | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,7 +120,7 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter }: ProjectsOffersTa
     );
   }
 
-  const handleMakeOffer = (post: Post) => {
+  const handleMakeOffer = (post: ExtendedPost) => {
     setSelectedPostForOffer(post);
     setShowOfferModal(true);
   };
@@ -356,9 +338,23 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter }: ProjectsOffersTa
                       </div>
                     )}
                     {offer.company && (
-                      <div className="text-sm text-gray-300">
-                        From: {offer.company.companyName}
-                      </div>
+                      <OfferActions 
+                        offerId={offer.id} 
+                        currentStatus={offer.status} 
+                        isHomeowner={userRole === 'HOMEOWNER'}
+                        onStatusChange={(newStatus) => {
+                          // Update the offer status in the UI
+                          if (offer.status === 'PENDING') {
+                            setOffersReceived(prev => 
+                              prev.map(o => 
+                                o.id === offer.id 
+                                  ? { ...o, status: newStatus } 
+                                  : o
+                              )
+                            );
+                          }
+                        }}
+                      />
                     )}
                     {offer.amount && (
                       <div className="flex items-center gap-2 text-sm">
