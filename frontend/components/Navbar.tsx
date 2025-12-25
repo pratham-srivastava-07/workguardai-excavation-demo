@@ -33,7 +33,7 @@ export function Navbar() {
         }`}
       >
         <Link href="/" className="text-white text-2xl font-bold tracking-tight">
-          Renowise
+          RenoWise
         </Link>
 
         <div className={`hidden md:flex gap-8 items-center ${scrolled ? '' : 'ml-auto'}`}>
@@ -43,12 +43,7 @@ export function Navbar() {
           >
             About
           </Link>
-          <Link
-            href="/solution"
-            className="text-white/90 hover:text-white transition-colors text-sm font-medium"
-          >
-            Solution
-          </Link>
+
           {!isLoggedIn && <>
            <Button
             variant="outline"
@@ -57,6 +52,20 @@ export function Navbar() {
           >
             <Link href="/login">Login</Link>
           </Button></>}
+          
+          {/* <div className="relative group">
+            <button className="text-white/90 hover:text-white transition-colors text-sm font-medium flex items-center gap-1">
+              English
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div className="absolute right-0 mt-2 w-32 bg-black border border-white/10 rounded-md shadow-lg hidden group-hover:block py-1">
+               {['English', 'Finnish', 'Danish', 'Albanian', 'Portuguese'].map((lang) => (
+                 <button key={lang} className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10">
+                   {lang}
+                 </button>
+               ))}
+            </div>
+          </div> */}
          {!isLoggedIn && <>
           <Button
             className="bg-white text-black hover:bg-white/90"
@@ -81,12 +90,7 @@ export function Navbar() {
               >
                 About
               </Link>
-              <Link
-                href="/solution"
-                className="text-white text-lg hover:text-white/80 transition-colors"
-              >
-                Solution
-              </Link>
+
               <Button
                 variant="outline"
                 className="border-white/20 text-white hover:bg-white/10"

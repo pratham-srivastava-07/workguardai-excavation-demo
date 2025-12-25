@@ -35,6 +35,7 @@ interface Post {
   city?: {
     cityName?: string;
   };
+  subOptions?: string[];
   status: string;
 }
 
@@ -97,9 +98,9 @@ export function PostDetail({
           </p>
         </div>
         {onClose && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
             className="text-gray-400 hover:text-white"
           >
@@ -128,11 +129,10 @@ export function PostDetail({
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                    index === currentImageIndex 
-                      ? 'bg-primary w-6' 
-                      : 'bg-gray-700 hover:bg-gray-600'
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-all cursor-pointer ${index === currentImageIndex
+                    ? 'bg-primary w-6'
+                    : 'bg-gray-700 hover:bg-gray-600'
+                    }`}
                 />
               ))}
             </div>
@@ -148,60 +148,81 @@ export function PostDetail({
         </div>
       )}
 
-      {/* Details Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        {post.quantity && (
-          <Card className="p-3 bg-gray-900 border-gray-800">
-            <div className="flex items-center space-x-2 text-sm">
-              <Package className="w-4 h-4 text-gray-400" />
-              <div>
-                <div className="text-gray-400">Quantity</div>
-                <div className="font-semibold text-white">
-                  {post.quantity} {post.unit || 'units'}
+      {/* Sub-options for Entities */}
+      {post.subOptions && post.subOptions.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="font-semibold text-white">Explore</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {post.subOptions.map((option) => (
+              <Button
+                key={option}
+                variant="outline"
+                className="w-full justify-start text-left border-gray-700 hover:bg-gray-800 hover:text-white"
+                onClick={() => handleAction(() => console.log('Clicked option:', option))}
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Details Grid - Only show for standard posts or if relevant fields exist */}
+      {(post.quantity || post.price || post.availabilityDate || post.address) && (
+        <div className="grid grid-cols-2 gap-4">
+          {post.quantity && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <Package className="w-4 h-4 text-gray-400" />
+                <div>
+                  <div className="text-gray-400">Quantity</div>
+                  <div className="font-semibold text-white">
+                    {post.quantity} {post.unit || 'units'}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        )}
+            </Card>
+          )}
 
-        {post.price && (
-          <Card className="p-3 bg-gray-900 border-gray-800">
-            <div className="flex items-center space-x-2 text-sm">
-              <DollarSign className="w-4 h-4 text-gray-400" />
-              <div>
-                <div className="text-gray-400">Price</div>
-                <div className="font-semibold text-white">€{(post.price / 100).toFixed(2)}</div>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {post.availabilityDate && (
-          <Card className="p-3 bg-gray-900 border-gray-800">
-            <div className="flex items-center space-x-2 text-sm">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <div>
-                <div className="text-gray-400">Available</div>
-                <div className="font-semibold text-white">
-                  {new Date(post.availabilityDate).toLocaleDateString()}
+          {post.price && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <DollarSign className="w-4 h-4 text-gray-400" />
+                <div>
+                  <div className="text-gray-400">Price</div>
+                  <div className="font-semibold text-white">€{(post.price / 100).toFixed(2)}</div>
                 </div>
               </div>
-            </div>
-          </Card>
-        )}
+            </Card>
+          )}
 
-        {post.address && (
-          <Card className="p-3 bg-gray-900 border-gray-800">
-            <div className="flex items-center space-x-2 text-sm">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              <div>
-                <div className="text-gray-400">Location</div>
-                <div className="font-semibold text-white line-clamp-1">{post.address}</div>
+          {post.availabilityDate && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <div>
+                  <div className="text-gray-400">Available</div>
+                  <div className="font-semibold text-white">
+                    {new Date(post.availabilityDate).toLocaleDateString()}
+                  </div>
+                </div>
               </div>
-            </div>
-          </Card>
-        )}
-      </div>
+            </Card>
+          )}
+
+          {post.address && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <MapPin className="w-4 h-4 text-gray-400" />
+                <div>
+                  <div className="text-gray-400">Location</div>
+                  <div className="font-semibold text-white line-clamp-1">{post.address}</div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Options */}
       <div className="space-y-2">

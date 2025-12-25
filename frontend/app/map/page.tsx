@@ -14,7 +14,6 @@ import { WalletTab } from '@/components/dashboard-components/wallet-tab';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { API_BASE_URL } from '@/constants/env';
 
 interface Post {
@@ -37,13 +36,61 @@ interface Post {
   company?: any;
   city?: any;
   status: string;
+  // New fields for entities
+  entityType?: 'CITY' | 'BUSINESS' | 'HOMEOWNER';
+  subOptions?: string[]; // e.g., ['Projects', 'Tenders']
 }
+
+const MOCK_ENTITIES: Post[] = [
+  {
+    id: 'mock-city-1',
+    type: 'SPACE', // Fallback type
+    entityType: 'CITY',
+    title: 'City of Lisbon',
+    description: 'Capital city with ongoing urban projects.',
+    subtype: 'Municipality',
+    latitude: 38.7223,
+    longitude: -9.1393,
+    status: 'AVAILABLE',
+    city: { cityName: 'Lisbon' },
+    subOptions: ['Projects', 'Tenders', 'Materials', 'Spaces'],
+    address: 'Praça do Comércio, Lisbon'
+  },
+  {
+    id: 'mock-business-1',
+    type: 'SERVICE',
+    entityType: 'BUSINESS',
+    title: 'BuildRight Construction',
+    description: 'Premium construction services and materials.',
+    subtype: 'General Contractor',
+    latitude: 38.7423,
+    longitude: -9.1593,
+    status: 'AVAILABLE',
+    company: { companyName: 'BuildRight Construction' },
+    subOptions: ['Services', 'Materials', 'Spaces', 'Transportation'],
+    address: 'Av. da Liberdade, Lisbon'
+  },
+  {
+    id: 'mock-homeowner-1',
+    type: 'SPACE',
+    entityType: 'HOMEOWNER',
+    title: 'Johns Renovation',
+    description: 'Renovating my historic apartment.',
+    subtype: 'Residential',
+    latitude: 38.7123,
+    longitude: -9.1293,
+    status: 'AVAILABLE',
+    user: { name: 'John Doe', role: 'HOMEOWNER' },
+    subOptions: ['Spaces', 'Materials', 'Projects', 'Transportation'],
+    address: 'Alfama, Lisbon'
+  }
+];
 
 export default function MapPage() {
   return (
-    <ProtectedRoute>
+    <>
       <MapPageContent />
-    </ProtectedRoute>
+    </>
   );
 }
 
@@ -76,9 +123,9 @@ function MapPageContent() {
     const checkContainer = setInterval(() => {
       if (mapContainer.current && mapContainer.current.offsetWidth > 0 && mapContainer.current.offsetHeight > 0) {
         clearInterval(checkContainer);
-        
+
         const apiKey = process.env.NEXT_PUBLIC_GEOAPIFY_KEY;
-        const mapStyle = apiKey 
+        const mapStyle = apiKey
           ? `https://maps.geoapify.com/v1/styles/osm-carto/style.json?apiKey=${apiKey}`
           : 'https://demotiles.maplibre.org/style.json'; // Fallback style
 
@@ -138,11 +185,37 @@ function MapPageContent() {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
+    // Filter mock entities based on search
+    const filteredMock = searchQuery
+      ? MOCK_ENTITIES.filter(e =>
+        e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.subtype.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      : MOCK_ENTITIES;
+
     // Add new markers
-    posts.forEach((post) => {
+    const allItems = [...posts, ...filteredMock];
+
+    allItems.forEach((post) => {
       const el = document.createElement('div');
-      el.className = 'bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center shadow-lg cursor-pointer';
-      el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="white" viewBox="0 0 24 24"><path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7z"/></svg>`;
+
+      // Determine color/icon based on entity type
+      let bgClass = 'bg-primary';
+      let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="white" viewBox="0 0 24 24"><path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7z"/></svg>`;
+
+      if (post.entityType === 'CITY') {
+        bgClass = 'bg-blue-600';
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12" y2="2"></line><line x1="6" y1="2" x2="6" y2="22"></line><line x1="18" y1="2" x2="18" y2="22"></line></svg>`;
+      } else if (post.entityType === 'BUSINESS') {
+        bgClass = 'bg-orange-600';
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4 8 4v14"/><path d="M17 21v-8H7v8"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 13h1"/><path d="M14 13h1"/></svg>`;
+      } else if (post.entityType === 'HOMEOWNER') {
+        bgClass = 'bg-green-600';
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
+      }
+
+      el.className = `${bgClass} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg cursor-pointer transform hover:scale-110 transition-transform`;
+      el.innerHTML = iconSvg;
 
       const marker = new maplibregl.Marker(el)
         .setLngLat([post.longitude, post.latitude])
@@ -178,7 +251,7 @@ function MapPageContent() {
         );
         setShowLeftPanel(true);
       };
-      
+
       // Add cursor pointer style
       el.style.cursor = 'pointer';
 
@@ -190,7 +263,9 @@ function MapPageContent() {
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) {
-      setPosts([]);
+      setPosts([]); // Keep empty or maybe show MOCK_ENTITIES by default? User said "show those homeowners...".
+      // Let's show mock entities when search is empty or just "near location" is implied
+      // For now, render MOCK_ENTITIES is handled in the map effect via allItems
       return;
     }
 
@@ -269,7 +344,7 @@ function MapPageContent() {
   // Handle menu item clicks
   const handleMenuItemClick = async (item: string) => {
     setActiveMenuItem(item);
-    
+
     if (item === 'map') {
       // Map: collapse left panel
       setShowLeftPanel(false);
@@ -394,6 +469,11 @@ function MapPageContent() {
   };
 
   const handleCreatePost = () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      window.location.href = '/login?redirect=/map';
+      return;
+    }
     setShowCreatePost(true);
     setLeftPanelTitle('Create Post');
     setLeftPanelContent(
@@ -455,11 +535,11 @@ function MapPageContent() {
       activeMenuItem={activeMenuItem}
       onMenuItemClick={handleMenuItemClick}
     >
-      <div 
-        ref={mapContainer} 
+      <div
+        ref={mapContainer}
         className="w-full h-full absolute inset-0 z-0"
-        style={{ 
-          minHeight: '100%', 
+        style={{
+          minHeight: '100%',
           minWidth: '100%',
           position: 'absolute',
           top: 0,
@@ -492,7 +572,7 @@ function MapPageContent() {
           </div>
         </div>
       )}
-      
+
       {/* Create Post Button - Prominent Floating CTA */}
       <Button
         onClick={handleCreatePost}
