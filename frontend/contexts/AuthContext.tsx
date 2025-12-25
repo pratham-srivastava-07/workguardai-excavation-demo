@@ -15,6 +15,7 @@ interface User {
 interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
+  login: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
 }
 
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = useCallback(async () => {
     try {
       const token = await getValidAccessToken();
-      
+
       if (token) {
         const userData = localStorage.getItem('user');
         if (userData) {
@@ -57,6 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('storage', checkAuth);
   }, [checkAuth]);
 
+  const login = (accessToken: string, refreshToken: string, userData: User) => {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setIsLoggedIn(true);
+    setUser(userData);
+  };
+
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -72,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

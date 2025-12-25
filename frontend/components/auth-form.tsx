@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Mail, Lock, User, Building2 } from 'lucide-react'
 import loginUser, { signupUser } from '@/utils/helper'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AuthFormProps {
   type: 'signin' | 'signup'
@@ -30,70 +31,66 @@ export function AuthForm({ type }: AuthFormProps) {
     setIsLoading(false)
   }
 
- const handleLogin = async () => {
-  setError(null);
-  setIsLoading(true);
+  const { login } = useAuth();
 
-  try {
-    const response = await loginUser(email, password);
+  const handleLogin = async () => {
+    setError(null);
+    setIsLoading(true);
 
-    if (!response || !response.ok) {
-      const err = await response?.json();
+    try {
+      const response = await loginUser(email, password);
+
+      if (!response || !response.ok) {
+        const err = await response?.json();
+        setError(err?.message || "Login failed");
+        setIsLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // Use context login
+      login(data.accessToken, data.refreshToken, data.user);
+
+      // Get redirect from URL or default to map
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect') || '/map';
+
+      router.push(redirect);
+    } catch (err: any) {
       setError(err?.message || "Login failed");
       setIsLoading(false);
-      return;
     }
-
-    const data = await response.json();
-    
-    // Save tokens and user data
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-
-    // Get redirect from URL or default to map
-    const urlParams = new URLSearchParams(window.location.search);
-    const redirect = urlParams.get('redirect') || '/map';
-    
-    // Use window.location for full page reload
-    window.location.href = redirect;
-  } catch (err: any) {
-    setError(err?.message || "Login failed");
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleSignup = async () => {
-  setError(null);
-  setIsLoading(true);
+    setError(null);
+    setIsLoading(true);
 
-  try {
-    const response = await signupUser(name, email, password, role);
+    try {
+      const response = await signupUser(name, email, password, role);
 
-    if (!response || !response.ok) {
-      const err = await response?.json();
+      if (!response || !response.ok) {
+        const err = await response?.json();
+        setError(err?.message || "Signup failed");
+        setIsLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // Use context login
+      login(data.accessToken, data.refreshToken, data.user);
+
+      router.push('/map');
+    } catch (err: any) {
       setError(err?.message || "Signup failed");
       setIsLoading(false);
-      return;
     }
-
-    const data = await response.json();
-    
-    // Save tokens and user data
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-
-    // Redirect to map
-    window.location.href = '/map';
-  } catch (err: any) {
-    setError(err?.message || "Signup failed");
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-background color-white text-white">
+    <div className="w-full flex items-center justify-center px-4 py-12 relative z-20">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -114,48 +111,45 @@ export function AuthForm({ type }: AuthFormProps) {
 
         {/* Role Selection for Signup */}
         {type === 'signup' && (
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-3 mb-6 ">
             <button
               type="button"
               onClick={() => setRole('HOMEOWNER')}
-              className={`p-4 rounded-lg border-2 transition-colors ${
-                role === 'HOMEOWNER'
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border/50 hover:border-border'
-              }`}
+              className={`p-4 rounded-lg border-2 hover:cursor-pointer transition-colors ${role === 'HOMEOWNER'
+                ? 'border-primary bg-primary/10'
+                : 'border-border/50 hover:border-border'
+                }`}
             >
-              <User className="w-5 h-5 mx-auto mb-2 text-accent" />
+              <User className="w-5 h-5 mx-auto mb-2 hover:cursor-pointer text-white " />
               <p className="text-sm font-medium text-foreground">Homeowner</p>
             </button>
             <button
               type="button"
               onClick={() => setRole('COMPANY')}
-              className={`p-4 rounded-lg border-2 transition-colors ${
-                role === 'COMPANY'
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border/50 hover:border-border'
-              }`}
+              className={`p-4 rounded-lg border-2 hover:cursor-pointer transition-colors ${role === 'COMPANY'
+                ? 'border-primary bg-primary/10'
+                : 'border-border/50 hover:border-border'
+                }`}
             >
-              <Building2 className="w-5 h-5 mx-auto mb-2 text-accent" />
+              <Building2 className="w-5 h-5 mx-auto mb-2  text-white " />
               <p className="text-sm font-medium text-foreground">Company</p>
             </button>
             <button
               type="button"
               onClick={() => setRole('CITY')}
-              className={`p-4 rounded-lg border-2 transition-colors ${
-                role === 'CITY'
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border/50 hover:border-border'
-              }`}
+              className={`p-4 rounded-lg border-2 hover:cursor-pointer transition-colors ${role === 'CITY'
+                ? 'border-primary bg-primary/10'
+                : 'border-border/50 hover:border-border'
+                }`}
             >
-              <Building2 className="w-5 h-5 mx-auto mb-2 text-accent" />
+              <Building2 className="w-5 h-5 mx-auto mb-2 text-white " />
               <p className="text-sm font-medium text-foreground">City</p>
             </button>
           </div>
         )}
 
         {/* Form Card */}
-        <Card className="bg-card border-border/50 p-8">
+        <Card className="bg-black/80 backdrop-blur-md border-white/20 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name Field (Signup only) */}
             {type === 'signup' && (
@@ -221,7 +215,7 @@ export function AuthForm({ type }: AuthFormProps) {
               type="submit"
               disabled={isLoading}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={type === "signin" ? handleLogin: handleSignup}
+              onClick={type === "signin" ? handleLogin : handleSignup}
             >
               {isLoading
                 ? 'Loading...'
@@ -236,14 +230,14 @@ export function AuthForm({ type }: AuthFormProps) {
             {type === 'signin' ? (
               <>
                 Don't have an account?{' '}
-                <Link href="/signup" className="text-accent hover:text-accent/80 font-medium">
+                <Link href="/signup" className="text-blue-500 hover:text-blue-600 font-medium">
                   Sign up
                 </Link>
               </>
             ) : (
               <>
                 Already have an account?{' '}
-                <Link href="/login" className="text-accent hover:text-accent/80 font-medium">
+                <Link href="/login" className="text-blue-500 hover:text-blue-600 font-medium">
                   Sign in
                 </Link>
               </>

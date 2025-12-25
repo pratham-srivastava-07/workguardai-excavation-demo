@@ -30,8 +30,8 @@ export function LeftPanel({ children, isOpen, onClose, onToggle, title, classNam
       {/* Panel */}
       <div
         className={cn(
-          'absolute top-16 left-0 h-[calc(100vh-4rem)] bg-black border-r border-gray-800 shadow-2xl transition-transform duration-300 z-30 flex flex-col',
-          isOpen ? 'translate-x-0 w-full sm:w-96 md:w-[420px]' : '-translate-x-full',
+          'absolute top-20 left-4 bottom-4 w-full sm:w-96 md:w-[420px] bg-black/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl transition-transform duration-300 z-30 flex flex-col',
+          isOpen ? 'translate-x-0' : '-translate-x-[120%]',
           className
         )}
       >

@@ -1,7 +1,7 @@
 'use client';
 
 import { Navbar } from '@/components/Navbar';
-import { AnimatedBackground } from '@/components/AnimatedBackground';
+import { SimpleMapBackground } from '@/components/SimpleMapBackground';
 import { SearchBar } from '@/components/Search';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +15,7 @@ export default function Home() {
   const { isLoggedIn, user, logout } = useAuth();
   return (
     <div className="min-h-screen bg-black text-white">
-      <AnimatedBackground />
+      <SimpleMapBackground />
       <Navbar />
 
       <main>
@@ -169,29 +169,29 @@ export default function Home() {
               </p>
             </motion.div>
 
-           {!isLoggedIn && <>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
-              <Button
-                size="lg"
-                className="bg-white text-black hover:bg-white/90 text-lg px-12"
-                asChild
+            {!isLoggedIn && <>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                viewport={{ once: true }}
               >
-                <Link href="/signup">Sign Up Now</Link>
-              </Button>
-            </motion.div>
-           </>}
+                <Button
+                  size="lg"
+                  className="bg-white text-black hover:bg-white/90 text-lg px-12"
+                  asChild
+                >
+                  <Link href="/signup">Sign Up Now</Link>
+                </Button>
+              </motion.div>
+            </>}
           </div>
         </section>
       </main>
 
       <footer className="border-t border-white/10 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto text-center text-white/60">
-          <p>&copy; 2024 Renowise. All rights reserved.</p>
+          <p>&copy; 2025 RenoWise. All rights reserved.</p>
         </div>
       </footer>
     </div>
