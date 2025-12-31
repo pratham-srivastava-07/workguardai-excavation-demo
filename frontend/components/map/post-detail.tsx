@@ -9,7 +9,7 @@ import { getImageArray } from '@/utils/imageHelper';
 
 interface Post {
   id: string;
-  type: 'MATERIAL' | 'SERVICE' | 'SPACE';
+  type: 'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE';
   title: string;
   description?: string;
   subtype: string;
@@ -24,7 +24,9 @@ interface Post {
   availabilityDate?: string;
   pickupAllowed?: boolean;
   transportNeeded?: boolean;
+  userId?: string;
   user?: {
+    id?: string;
     name?: string;
     email?: string;
     role?: string;
@@ -37,6 +39,13 @@ interface Post {
   };
   subOptions?: string[];
   status: string;
+  // Vehicle fields
+  km?: number;
+  year?: number;
+  color?: string;
+  vin?: string;
+  gearbox?: string;
+  inspectionPassed?: boolean;
 }
 
 interface PostDetailProps {
@@ -48,6 +57,9 @@ interface PostDetailProps {
   isAuthenticated?: boolean;
   onAuthRequired?: () => void;
   showOfferButton?: boolean;
+  onEdit?: (post: Post) => void;
+  onDelete?: (postId: string) => void;
+  currentUserId?: string;
 }
 
 export function PostDetail({
@@ -59,6 +71,9 @@ export function PostDetail({
   isAuthenticated = false,
   onAuthRequired,
   showOfferButton = true,
+  onEdit,
+  onDelete,
+  currentUserId,
 }: PostDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const images = getImageArray(post.images);
@@ -77,6 +92,7 @@ export function PostDetail({
     MATERIAL: 'bg-blue-900 text-blue-200',
     SERVICE: 'bg-green-900 text-green-200',
     SPACE: 'bg-purple-900 text-purple-200',
+    VEHICLE: 'bg-red-900 text-red-200',
   };
 
   return (
@@ -98,14 +114,31 @@ export function PostDetail({
           </p>
         </div>
         {onClose && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="w-5 h-5" />
-          </Button>
+          <div className="flex bg-transparent">
+            {/* Edit/Delete for Owner */}
+            {(currentUserId && (post.userId === currentUserId || (post.user && post.user.id === currentUserId))) && (
+              <div className="flex mr-2 space-x-1">
+                {onEdit && (
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(post)} className="text-gray-400 hover:text-white">
+                    Edit
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button variant="ghost" size="sm" onClick={() => onDelete(post.id)} className="text-red-400 hover:text-red-300">
+                    Delete
+                  </Button>
+                )}
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-gray-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         )}
       </div>
 
@@ -224,6 +257,53 @@ export function PostDetail({
         </div>
       )}
 
+      {post.type === 'VEHICLE' && (
+        <div className="grid grid-cols-2 gap-4">
+          {post.km && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <div>
+                  <div className="text-gray-400">Mileage</div>
+                  <div className="font-semibold text-white">{post.km} km</div>
+                </div>
+              </div>
+            </Card>
+          )}
+          {post.year && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <div>
+                  <div className="text-gray-400">Year</div>
+                  <div className="font-semibold text-white">{post.year}</div>
+                </div>
+              </div>
+            </Card>
+          )}
+          {post.gearbox && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <div>
+                  <div className="text-gray-400">Transmission</div>
+                  <div className="font-semibold text-white">{post.gearbox}</div>
+                </div>
+              </div>
+            </Card>
+          )}
+          {post.inspectionPassed !== undefined && (
+            <Card className="p-3 bg-gray-900 border-gray-800">
+              <div className="flex items-center space-x-2 text-sm">
+                <div>
+                  <div className="text-gray-400">Inspection</div>
+                  <div className="font-semibold text-white">
+                    {post.inspectionPassed ? 'Passed' : 'Pending/Failed'}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* Options */}
       <div className="space-y-2">
         <div className="text-sm font-semibold text-white">Options</div>
@@ -309,4 +389,3 @@ export function PostDetail({
     </div>
   );
 }
-

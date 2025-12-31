@@ -12,7 +12,7 @@ import { API_BASE_URL } from '@/constants/env';
 
 const MATERIAL_SUBTYPES = [
   'window', 'tiles', 'iron bar', 'wood', 'planks', 'roof tiles',
-  'paint', 'screws', 'posters', 'gravel', 'sand'
+  'paint', 'screws', 'posters', 'gravel', 'sand', 'curtains', 'curtain blinds'
 ];
 
 const SERVICE_SUBTYPES = [
@@ -21,6 +21,10 @@ const SERVICE_SUBTYPES = [
 
 const SPACE_SUBTYPES = [
   'coworking', 'parking', 'hall', 'school', 'storage'
+];
+
+const VEHICLE_SUBTYPES = [
+  'car', 'van', 'truck', 'motorcycle', 'scooter', 'trailer'
 ];
 
 const UNITS = ['m²', 'm³', 'pieces', 'liters', 'kilograms'];
@@ -59,7 +63,7 @@ const compressImage = (base64: string, maxWidth = 1200, quality = 0.8): Promise<
 
 export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostFormProps) {
   const { toast } = useToast();
-  
+
   const loadSavedState = () => {
     if (initialData) return initialData;
     try {
@@ -72,8 +76,8 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
   };
 
   const savedState = loadSavedState();
-  
-  const [type, setType] = useState<'MATERIAL' | 'SERVICE' | 'SPACE'>(savedState.type || 'MATERIAL');
+
+  const [type, setType] = useState<'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE'>(savedState.type || 'MATERIAL');
   const [subtype, setSubtype] = useState(savedState.subtype || '');
   const [title, setTitle] = useState(savedState.title || '');
   const [description, setDescription] = useState(savedState.description || '');
@@ -97,6 +101,15 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
   const [hourlyRate, setHourlyRate] = useState(savedState.hourlyRate || '');
   const [dailyRate, setDailyRate] = useState(savedState.dailyRate || '');
   const [rentalDuration, setRentalDuration] = useState(savedState.rentalDuration || '');
+
+  // Vehicle specific state
+  const [km, setKm] = useState(savedState.km || '');
+  const [year, setYear] = useState(savedState.year || '');
+  const [color, setColor] = useState(savedState.color || '');
+  const [vin, setVin] = useState(savedState.vin || '');
+  const [gearbox, setGearbox] = useState(savedState.gearbox || '');
+  const [inspectionPassed, setInspectionPassed] = useState(savedState.inspectionPassed || false);
+
   const [loading, setLoading] = useState(false);
   const [generatingDescription, setGeneratingDescription] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
@@ -126,11 +139,12 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
     }
   };
 
-  const handleTypeChange = (newType: 'MATERIAL' | 'SERVICE' | 'SPACE') => {
+  const handleTypeChange = (newType: 'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE') => {
     saveState();
     setType(newType);
-    const newSubtypes = newType === 'MATERIAL' ? MATERIAL_SUBTYPES : 
-                        newType === 'SERVICE' ? SERVICE_SUBTYPES : SPACE_SUBTYPES;
+    const newSubtypes = newType === 'MATERIAL' ? MATERIAL_SUBTYPES :
+      newType === 'SERVICE' ? SERVICE_SUBTYPES :
+        newType === 'SPACE' ? SPACE_SUBTYPES : VEHICLE_SUBTYPES;
     if (!newSubtypes.includes(subtype)) {
       setSubtype('');
     }
@@ -141,16 +155,17 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       saveState();
     }, 500);
     return () => clearTimeout(timer);
-  }, [type, subtype, title, description, quantity, unit, price, address, condition, 
-      availabilityDate, images, pickupAllowed, transportNeeded, canCompanyCollect, 
-      permitForReuse, hazardousMaterials, structuralItems, socialLink, hourlyRate, 
-      dailyRate, rentalDuration, latitude, longitude]);
+  }, [type, subtype, title, description, quantity, unit, price, address, condition,
+    availabilityDate, images, pickupAllowed, transportNeeded, canCompanyCollect,
+    permitForReuse, hazardousMaterials, structuralItems, socialLink, hourlyRate,
+    dailyRate, rentalDuration, latitude, longitude, km, year, color, vin, gearbox, inspectionPassed]);
 
   const getSubtypes = () => {
     switch (type) {
       case 'MATERIAL': return MATERIAL_SUBTYPES;
       case 'SERVICE': return SERVICE_SUBTYPES;
       case 'SPACE': return SPACE_SUBTYPES;
+      case 'VEHICLE': return VEHICLE_SUBTYPES;
       default: return [];
     }
   };
@@ -195,7 +210,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
   const handleManualCoordinates = () => {
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
-    
+
     if (isNaN(lat) || isNaN(lng)) {
       toast({
         title: 'Invalid Coordinates',
@@ -204,7 +219,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       });
       return;
     }
-    
+
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       toast({
         title: 'Invalid Range',
@@ -213,7 +228,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       });
       return;
     }
-    
+
     setLatitude(lat);
     setLongitude(lng);
     toast({
@@ -281,7 +296,10 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
 
   const generateDescription = async () => {
     setGeneratingDescription(true);
-    const generated = `${type} - ${subtype}${quantity ? `, ${quantity} ${unit}` : ''}${condition ? `, ${condition}` : ''}${price ? `, €${price}` : ''}`;
+    let generated = `${type} - ${subtype}${quantity ? `, ${quantity} ${unit}` : ''}${condition ? `, ${condition}` : ''}${price ? `, €${price}` : ''}`;
+    if (type === 'VEHICLE') {
+      generated += `${km ? `, ${km}km` : ''}${year ? `, Year ${year}` : ''}${gearbox ? `, ${gearbox}` : ''}${color ? `, ${color}` : ''}`;
+    }
     setDescription(generated);
     setGeneratingDescription(false);
     toast({
@@ -292,7 +310,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     console.log('=== SUBMIT STARTED ===');
     setDebugInfo('Starting submission...');
 
@@ -328,7 +346,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
     try {
       const token = localStorage.getItem('accessToken');
       console.log('Token exists:', !!token);
-      
+
       if (!token) {
         setDebugInfo('No auth token found - redirecting to login');
         const draft = {
@@ -336,15 +354,15 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
           latitude, longitude, address, condition, availabilityDate,
           pickupAllowed, transportNeeded, canCompanyCollect, permitForReuse,
           hazardousMaterials, structuralItems, socialLink, hourlyRate,
-          dailyRate, rentalDuration
+          dailyRate, rentalDuration, km, year, color, vin, gearbox, inspectionPassed
         };
         localStorage.setItem('postDraft', JSON.stringify(draft));
-        
+
         toast({
           title: 'Authentication Required',
           description: 'Redirecting to login...',
         });
-        
+
         if (typeof window !== 'undefined') {
           window.location.href = '/login?redirect=/map&action=create-post';
         }
@@ -365,7 +383,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       if (address) formData.append('address', address);
       if (condition) formData.append('condition', condition);
       if (availabilityDate) formData.append('availabilityDate', availabilityDate);
-      
+
       // Append image files
       imageFiles.forEach((file, index) => {
         formData.append('images', file, `image-${index}.jpg`);
@@ -382,10 +400,26 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       if (dailyRate) formData.append('dailyRate', (Math.round(parseFloat(dailyRate) * 100)).toString());
       if (rentalDuration) formData.append('rentalDuration', rentalDuration);
 
+      // Vehicle fields
+      if (type === 'VEHICLE') {
+        if (km) formData.append('km', km);
+        if (year) formData.append('year', year);
+        if (color) formData.append('color', color);
+        if (vin) formData.append('vin', vin);
+        if (gearbox) formData.append('gearbox', gearbox);
+        formData.append('inspectionPassed', inspectionPassed.toString());
+      }
+
       setDebugInfo(`Sending multipart request to ${API_BASE_URL}/posts`);
 
-      const response = await fetch(`${API_BASE_URL}/posts`, {
-        method: 'POST',
+      const url = initialData?.id
+        ? `${API_BASE_URL}/posts/${initialData.id}`
+        : `${API_BASE_URL}/posts`;
+
+      const method = initialData?.id ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Authorization': `Bearer ${token}`,
           // DO NOT set Content-Type - browser will set it with boundary
@@ -397,7 +431,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
 
       const responseText = await response.text();
       console.log('Response text:', responseText);
-      
+
       let data;
       try {
         data = JSON.parse(responseText);
@@ -414,13 +448,13 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       }
 
       console.log('Success! Response:', data);
-      setDebugInfo('Post created successfully!');
+      setDebugInfo(initialData?.id ? 'Post updated successfully!' : 'Post created successfully!');
 
       localStorage.removeItem(STORAGE_KEY);
 
       toast({
         title: 'Success',
-        description: 'Post created successfully!',
+        description: initialData?.id ? 'Post updated successfully!' : 'Post created successfully!',
       });
 
       if (onSuccess) {
@@ -430,7 +464,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       console.error('Submit error:', error);
       const errorMessage = error.message || 'Failed to create post';
       setDebugInfo(`Error: ${errorMessage}`);
-      
+
       toast({
         title: 'Error',
         description: errorMessage,
@@ -443,12 +477,12 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
 
   return (
     <div className="p-6 space-y-6 bg-black mb-15">
-    
+
 
       <div>
         <Label className="text-white mb-3 block font-medium">Post Type *</Label>
         <div className="flex space-x-2">
-          {(['MATERIAL', 'SERVICE', 'SPACE'] as const).map((t) => (
+          {(['MATERIAL', 'SERVICE', 'SPACE', 'VEHICLE'] as const).map((t) => (
             <Button
               key={t}
               type="button"
@@ -456,8 +490,8 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
               onClick={() => handleTypeChange(t)}
               className={cn(
                 "flex-1 transition-all",
-                type === t 
-                  ? "bg-primary hover:bg-primary/90" 
+                type === t
+                  ? "bg-primary hover:bg-primary/90"
                   : "border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white"
               )}
             >
@@ -582,14 +616,87 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
         </div>
       )}
 
+      {type === 'VEHICLE' && (
+        <div className="space-y-4 border-t border-gray-800 pt-4">
+          <Label className="text-white text-lg font-semibold">Vehicle Details</Label>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-white mb-2 block font-medium">Kilometers (km)</Label>
+              <Input
+                type="number"
+                value={km}
+                onChange={(e) => setKm(e.target.value)}
+                className="bg-gray-900 border-gray-700 text-white"
+                placeholder="e.g. 150000"
+              />
+            </div>
+            <div>
+              <Label className="text-white mb-2 block font-medium">Registration Year</Label>
+              <Input
+                type="number"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className="bg-gray-900 border-gray-700 text-white"
+                placeholder="e.g. 2018"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-white mb-2 block font-medium">Color</Label>
+              <Input
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="bg-gray-900 border-gray-700 text-white"
+                placeholder="e.g. White"
+              />
+            </div>
+            <div>
+              <Label className="text-white mb-2 block font-medium">Transmission</Label>
+              <Select value={gearbox} onValueChange={setGearbox}>
+                <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700">
+                  <SelectItem value="Manual" className="text-white">Manual</SelectItem>
+                  <SelectItem value="Automatic" className="text-white">Automatic</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-white mb-2 block font-medium">VIN (Vehicle Identification Number)</Label>
+            <Input
+              value={vin}
+              onChange={(e) => setVin(e.target.value)}
+              className="bg-gray-900 border-gray-700 text-white"
+              placeholder="Optional"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={inspectionPassed}
+              onChange={(e) => setInspectionPassed(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-gray-300">Inspection Passed (Roadworthy)</span>
+          </div>
+        </div>
+      )}
+
       {/* Location Section - Enhanced */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-white font-medium">Location * (Required)</Label>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={getLocation}
             disabled={locationLoading}
           >
@@ -597,14 +704,14 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
             {locationLoading ? 'Getting Location...' : 'Use My Location'}
           </Button>
         </div>
-        
+
         <Input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder="Enter address (optional)"
           className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
         />
-        
+
         {/* Manual Coordinate Entry */}
         <div className="border border-gray-700 rounded-lg p-4 space-y-3 bg-gray-900/50">
           <Label className="text-sm text-gray-400">Or Enter Coordinates Manually:</Label>
@@ -701,7 +808,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
                 <Upload className="w-6 h-6 text-gray-400" />
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,.webp"
                   multiple
                   onChange={handleImageUpload}
                   className="hidden"
@@ -748,19 +855,19 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       </div>
 
       <div className="flex space-x-2 pt-4 border-t border-gray-800">
-        <Button 
+        <Button
           type="button"
           onClick={handleSubmit}
-          disabled={loading} 
+          disabled={loading}
           className="flex-1 bg-primary hover:bg-primary/90 text-white"
           size="lg"
         >
-          {loading ? 'Posting...' : 'Create Post'}
+          {loading ? (initialData?.id ? 'Updating...' : 'Posting...') : (initialData?.id ? 'Update Post' : 'Create Post')}
         </Button>
         {onCancel && (
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => {
               localStorage.removeItem(STORAGE_KEY);
               onCancel();
