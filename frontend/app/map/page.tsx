@@ -18,7 +18,7 @@ import { API_BASE_URL } from '@/constants/env';
 
 interface Post {
   id: string;
-  type: 'MATERIAL' | 'SERVICE' | 'SPACE';
+  type: 'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE';
   title: string;
   description?: string;
   subtype: string;
@@ -214,6 +214,13 @@ function MapPageContent() {
         iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
       }
 
+      // Override for VEHICLE type
+      if (post.type === 'VEHICLE') {
+        bgClass = 'bg-red-600';
+        // Car icon
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>`;
+      }
+
       el.className = `${bgClass} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg cursor-pointer transform hover:scale-110 transition-transform`;
       el.innerHTML = iconSvg;
 
@@ -247,6 +254,9 @@ function MapPageContent() {
               window.location.href = '/login';
             }}
             showOfferButton={shouldShowOfferButton(post)}
+            onEdit={handleEditPost}
+            onDelete={handleDeletePost}
+            currentUserId={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id : undefined}
           />
         );
         setShowLeftPanel(true);
@@ -316,6 +326,9 @@ function MapPageContent() {
                   onRequestPickup={handleRequestPickup}
                   isAuthenticated={true}
                   showOfferButton={shouldShowOfferButton(post)}
+                  onEdit={handleEditPost}
+                  onDelete={handleDeletePost}
+                  currentUserId={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id : undefined}
                 />
               );
             }}
@@ -391,6 +404,9 @@ function MapPageContent() {
                       onRequestPickup={(postId) => handleRequestPickup(postId)}
                       isAuthenticated={true}
                       showOfferButton={shouldShowOfferButton(post)}
+                      onEdit={handleEditPost}
+                      onDelete={handleDeletePost}
+                      currentUserId={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id : undefined}
                     />
                   );
                 }}
@@ -518,6 +534,79 @@ function MapPageContent() {
   const handleRequestPickup = (postId: string) => {
     // TODO: Implement pickup request
     alert('Pickup request feature coming soon!');
+  };
+
+  const handleEditPost = (post: Post) => {
+    setShowLeftPanel(true);
+    setLeftPanelTitle('Edit Post');
+    setLeftPanelContent(
+      <CreatePostForm
+        initialData={post}
+        onSuccess={() => {
+          setShowLeftPanel(false);
+          // Refresh posts
+          handleMenuItemClick('posts'); // determine basic refresh strategy
+          // If viewing My Posts, refreshing is easy. If map, maybe re-search or reload?
+          // For now simple refresh if we were on 'posts' tab, or empty
+          window.location.reload(); // Simplest way to ensure map updates for now
+        }}
+        onCancel={() => {
+          // Go back to details view
+          setSelectedPost(post);
+          // Re-render details
+          const el = markersRef.current.find(m => {
+            // Logic to find marker logic is hard without ID map, but we can just reset panel
+            return false;
+          });
+          // Just show details again
+          setLeftPanelTitle('Post Details');
+          setLeftPanelContent(
+            <PostDetail
+              post={post}
+              onClose={() => setShowLeftPanel(false)}
+              onMakeOffer={handleMakeOffer}
+              onContact={handleContact}
+              onRequestPickup={handleRequestPickup}
+              isAuthenticated={true}
+              showOfferButton={shouldShowOfferButton(post)}
+              onEdit={handleEditPost}
+              onDelete={handleDeletePost}
+              currentUserId={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id : undefined}
+            />
+          );
+        }}
+      />
+    );
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('Post deleted successfully');
+        setShowLeftPanel(false);
+        setSelectedPost(null);
+        // Refresh map/posts
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Failed to delete post');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error deleting post');
+    }
   };
 
   return (
