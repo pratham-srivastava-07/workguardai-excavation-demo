@@ -53,6 +53,7 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
       </form>
 
       {/* Menu Items - Desktop */}
+      {/* Menu Items - Desktop */}
       <div className="hidden md:flex items-center space-x-6">
         <Link href="/about" className="text-sm text-gray-300 hover:text-white transition-colors">
           About
@@ -60,6 +61,22 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
         <Link href="/contact" className="text-sm text-gray-300 hover:text-white transition-colors">
           Contact
         </Link>
+        {isAuthenticated && user?.role === 'HOMEOWNER' && (
+          <Link href="/homeowner-dashboard" className="text-sm text-gray-300 hover:text-white">
+            Homeowner
+          </Link>
+        )}
+        {isAuthenticated && (user?.role === 'BUSINESS' || user?.role === 'COMPANY') && (
+          <Link href="/company-dashboard" className="text-sm text-gray-300 hover:text-white">
+            Company
+          </Link>
+        )}
+        {isAuthenticated && user?.role === 'CITY' && (
+          <Link href="/city-dashboard" className="text-sm text-gray-300 hover:text-white">
+            City
+          </Link>
+        )}
+        {/*
         <Link href="/homeowners" className="text-sm text-gray-300 hover:text-white">
           Homeowners
         </Link>
@@ -69,6 +86,7 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
         <Link href="/cities" className="text-sm text-gray-300 hover:text-white">
           Cities
         </Link>
+        */}
       </div>
 
       {/* Auth Buttons */}
@@ -113,9 +131,21 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
           <div className="flex flex-col p-4 space-y-3">
             <Link href="/about" className="text-sm text-gray-300">About</Link>
             <Link href="/contact" className="text-sm text-gray-300">Contact</Link>
-            <Link href="/homeowners" className="text-sm text-gray-300">Homeowners</Link>
-            <Link href="/businesses" className="text-sm text-gray-300">Businesses</Link>
-            <Link href="/cities" className="text-sm text-gray-300">Cities</Link>
+            {isAuthenticated && user?.role === 'HOMEOWNER' && (
+              <Link href="/homeowner-dashboard" className="text-sm text-gray-300">
+                Homeowner
+              </Link>
+            )}
+            {isAuthenticated && (user?.role === 'BUSINESS' || user?.role === 'COMPANY') && (
+              <Link href="/company-dashboard" className="text-sm text-gray-300">
+                Company
+              </Link>
+            )}
+            {isAuthenticated && user?.role === 'CITY' && (
+              <Link href="/city-dashboard" className="text-sm text-gray-300">
+                City
+              </Link>
+            )}
           </div>
         </div>
       )}
