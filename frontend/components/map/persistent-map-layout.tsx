@@ -5,6 +5,7 @@ import { TopBar } from '@/components/layout/top-bar';
 import { DashboardMenu } from '@/components/layout/dashboard-menu';
 import { LeftPanel } from '@/components/layout/left-panel';
 import { MapView } from '@/components/map-view';
+import { toast } from 'sonner';
 
 interface PersistentMapLayoutProps {
   children?: ReactNode;
@@ -40,6 +41,13 @@ export function PersistentMapLayout({
     if (token && userData) {
       setIsAuthenticated(true);
       setUser(JSON.parse(userData));
+    } else {
+      toast("Please sign in or sign up to access all features", {
+        action: {
+          label: "Sign In",
+          onClick: () => window.location.href = '/login'
+        }
+      })
     }
   }, []);
 

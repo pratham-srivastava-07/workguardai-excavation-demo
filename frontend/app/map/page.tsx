@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
 import { API_BASE_URL } from '@/constants/env';
+import { toast } from 'sonner';
 
 interface Post {
   id: string;
@@ -91,6 +92,45 @@ export default function MapPage() {
     <>
       <MapPageContent />
     </>
+  );
+}
+
+function SignInRequiredPanel() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-6">
+      <div className="p-4 bg-gray-100 rounded-full dark:bg-gray-800">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-8 h-8 text-gray-500"
+        >
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+          <polyline points="10 17 15 12 10 7" />
+          <line x1="15" x2="3" y1="12" y2="12" />
+        </svg>
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-xl font-semibold">Authentication Required</h3>
+        <p className="text-gray-500 text-sm max-w-xs mx-auto">
+          Please sign in to access this feature and manage your dashboard.
+        </p>
+      </div>
+      <div className="flex flex-col w-full max-w-xs gap-3">
+        <Button className="w-full" onClick={() => window.location.href = '/login'}>
+          Sign In
+        </Button>
+        <Button variant="outline" className="w-full" onClick={() => window.location.href = '/signup'}>
+          Create Account
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -271,26 +311,40 @@ function MapPageContent() {
 
   // Handle search
   const handleSearch = async (query: string) => {
+    // Auth Check for Search
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      toast("Please sign in to search", {
+        action: {
+          label: "Sign In",
+          onClick: () => window.location.href = '/login'
+        }
+      });
+      return;
+    }
+
     setSearchQuery(query);
     if (!query.trim()) {
-      setPosts([]); // Keep empty or maybe show MOCK_ENTITIES by default? User said "show those homeowners...".
-      // Let's show mock entities when search is empty or just "near location" is implied
-      // For now, render MOCK_ENTITIES is handled in the map effect via allItems
+      setPosts([]);
       return;
     }
 
     setLoading(true);
     try {
-      // Get user location if available
+      // 1. First try searching for posts in our backend
       let lat: number | undefined;
       let lng: number | undefined;
 
       if (navigator.geolocation) {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
-        });
-        lat = position.coords.latitude;
-        lng = position.coords.longitude;
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          });
+          lat = position.coords.latitude;
+          lng = position.coords.longitude;
+        } catch (e) {
+          // ignore geolocation error
+        }
       }
 
       const params = new URLSearchParams({
@@ -303,7 +357,7 @@ function MapPageContent() {
       const response = await fetch(`${API_BASE_URL}/posts/search?${params}`);
       const data = await response.json();
 
-      if (data.data) {
+      if (data.data && data.data.length > 0) {
         setPosts(data.data);
         setLeftPanelTitle('Search Results');
         setLeftPanelContent(
@@ -335,6 +389,57 @@ function MapPageContent() {
           />
         );
         setShowLeftPanel(true);
+      } else {
+        // 2. If no posts found, try Geocoding API for a place
+        const apiKey = process.env.NEXT_PUBLIC_GEOAPIFY_KEY;
+        if (apiKey) {
+          try {
+            const geoRes = await fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&apiKey=${apiKey}`);
+            const geoData = await geoRes.json();
+
+            if (geoData.features && geoData.features.length > 0) {
+              const feature = geoData.features[0];
+              const [placeLng, placeLat] = feature.geometry.coordinates;
+
+              // Create a temporary "Location" post
+              const locationPost: Post = {
+                id: `loc-${Date.now()}`,
+                type: 'SPACE', // Generic type
+                entityType: 'CITY', // Use CITY icon for generic places
+                title: feature.properties.formatted || query,
+                description: 'Geocoded Location',
+                subtype: feature.properties.category || 'Location',
+                latitude: placeLat,
+                longitude: placeLng,
+                status: 'AVAILABLE',
+                subOptions: [],
+                address: feature.properties.formatted
+              };
+
+              setPosts([locationPost]);
+              centerMap(placeLat, placeLng);
+
+              // Show it in result panel too
+              setLeftPanelTitle('Location Result');
+              setLeftPanelContent(
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg">{locationPost.title}</h3>
+                  <p className="text-gray-500 text-sm mb-4">{locationPost.address}</p>
+                  <Button onClick={() => centerMap(placeLat, placeLng)} className="w-full">
+                    Zoom to Location
+                  </Button>
+                </div>
+              );
+              setShowLeftPanel(true);
+
+            } else {
+              setPosts([]);
+              toast("No results found.");
+            }
+          } catch (err) {
+            console.error("Geocoding error", err);
+          }
+        }
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -346,11 +451,17 @@ function MapPageContent() {
   // Center map on coordinates
   const centerMap = (lat: number, lng: number) => {
     if (mapRef.current) {
+      // If panel is open, we offset the center to the right so the pin isn't covered
+      const offset: [number, number] = showLeftPanel ? [-200, 0] : [0, 0];
+
       mapRef.current.flyTo({
         center: [lng, lat],
-        zoom: 14,
-        duration: 1000,
+        zoom: 18, // High zoom for precise location
+        offset: offset,
+        duration: 1500, // Slightly slower for better visual transition
+        essential: true
       });
+      // Also open the popup for this marker if possible, or we rely on selectedPost state to show details panel
     }
   };
 
@@ -369,11 +480,19 @@ function MapPageContent() {
     // All other items: expand left panel
     setShowLeftPanel(true);
 
+    // RESTRICTED ITEMS CHECK
+    const token = localStorage.getItem('accessToken');
+    const RESTRICTED_ITEMS = ['posts', 'orders', 'messages', 'wallet', 'create-post'];
+    if (RESTRICTED_ITEMS.includes(item) && !token) {
+      setLeftPanelTitle('Sign In Required');
+      setLeftPanelContent(<SignInRequiredPanel />);
+      return;
+    }
+
     if (item === 'create-post') {
       handleCreatePost();
     } else if (item === 'posts') {
       // Load user's posts
-      const token = localStorage.getItem('accessToken');
       if (token) {
         try {
           const response = await fetch(`${API_BASE_URL}/posts`, {
@@ -383,6 +502,7 @@ function MapPageContent() {
           });
           const data = await response.json();
           if (data.data) {
+            setPosts(data.data);
             setLeftPanelTitle('My Posts');
             setLeftPanelContent(
               <SearchResults
@@ -434,8 +554,10 @@ function MapPageContent() {
         try {
           const user = JSON.parse(userData);
           if (user.role === 'HOMEOWNER') {
-            // Redirect homeowners away from orders
-            setShowLeftPanel(false);
+            // Homeowners shouldn't see this, but if they strictly click it (e.g. from url or weird state)
+            // we can show access denied or just redirect
+            setLeftPanelTitle('Access Denied');
+            setLeftPanelContent(<div className="p-4">Homeowners cannot access Orders.</div>);
             return;
           }
         } catch {
