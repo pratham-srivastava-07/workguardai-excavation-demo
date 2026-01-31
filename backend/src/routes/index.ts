@@ -21,4 +21,5 @@ router.use("/posts", postRouter);
 router.use("/dashboard", authMiddleware, dashboardRouter);
 router.use("/orders", authMiddleware, ordersRouter);
 router.use("/offers", authMiddleware, offersRouter);
+// router.use("/messages", authMiddleware, messagesRouter);
 router.use("/projects-offers", authMiddleware, projectsOffersRouter);
