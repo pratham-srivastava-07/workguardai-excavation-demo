@@ -8,6 +8,7 @@ import { projectsOffersRouter } from "./projects-offers";
 import { offersRouter } from "./offers";
 import authMiddleware from "../middlewares/auth";
 import requireRole from "../middlewares/role";
+import messagesRouter from "./messages";
 
 export const router = express.Router();
 
@@ -21,4 +22,5 @@ router.use("/posts", postRouter);
 router.use("/dashboard", authMiddleware, dashboardRouter);
 router.use("/orders", authMiddleware, ordersRouter);
 router.use("/offers", authMiddleware, offersRouter);
+router.use("/messages", authMiddleware, messagesRouter);
 router.use("/projects-offers", authMiddleware, projectsOffersRouter);
