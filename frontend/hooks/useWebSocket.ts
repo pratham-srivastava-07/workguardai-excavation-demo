@@ -22,7 +22,7 @@ interface Assignment {
 export function useWebSocket(token: string | null) {
     const [socket, setSocket] = useState<WebSocket | null>(null);
     // Messages grouped by roomId or just a flat list? Let's keep flat list and filter in UI for now
-    // But ideally we want to know which room we are in.
+    // But ideally we want to know which room we are in. 
     const [messages, setMessages] = useState<Message[]>([]);
     const [isConnected, setIsConnected] = useState(false);
 
