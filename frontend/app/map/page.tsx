@@ -11,6 +11,8 @@ import { ProjectsOffersTab } from '@/components/dashboard-components/projects-of
 import { HelpTab } from '@/components/dashboard-components/help-tab';
 import { MessagesTab } from '@/components/dashboard-components/messages-tab';
 import { WalletTab } from '@/components/dashboard-components/wallet-tab';
+import { CreateProjectForm } from '@/components/projects/create-project-form';
+import { getImageArray, getCategoryImage } from '@/utils/imageHelper';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
@@ -261,10 +263,26 @@ function MapPageContent() {
         iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>`;
       }
 
-      el.className = `${bgClass} text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg cursor-pointer transform hover:scale-110 transition-transform`;
-      el.innerHTML = iconSvg;
+      // Force explicit dimensions for MapLibre compatibility
+      el.style.width = '48px';
+      el.style.height = '48px';
+      el.className = `${bgClass} text-white rounded-full flex items-center justify-center shadow-2xl cursor-pointer transform hover:scale-110 transition-transform border-2 border-white overflow-hidden`;
 
-      const marker = new maplibregl.Marker(el)
+      // Highlight geocoded locations specifically for identification
+      if (post.id.startsWith('loc-')) {
+        el.style.border = '3px solid #ff5722'; // Bright orange-red border
+      }
+
+      const images = getImageArray(post.images);
+      if (images && images.length > 0) {
+        el.innerHTML = `<img src="${images[0]}" style="width:100%; height:100%; object-fit:cover;" />`;
+      } else {
+        // Fallback to category-based stock image
+        const fallbackImage = getCategoryImage(post.title || post.subtype || '');
+        el.innerHTML = `<img src="${fallbackImage}" style="width:100%; height:100%; object-fit:cover;" />`;
+      }
+
+      const marker = new maplibregl.Marker({ element: el })
         .setLngLat([post.longitude, post.latitude])
         .addTo(mapRef.current!);
 
@@ -307,7 +325,7 @@ function MapPageContent() {
 
       markersRef.current.push(marker);
     });
-  }, [posts]);
+  }, [posts, searchQuery]);
 
   // Handle search
   const handleSearch = async (query: string) => {
@@ -363,7 +381,7 @@ function MapPageContent() {
         setLeftPanelContent(
           <SearchResults
             posts={data.data}
-            loading={false}
+            loading={loading}
             onPostClick={(post) => {
               setSelectedPost(post);
               centerMap(post.latitude, post.longitude);
@@ -394,7 +412,8 @@ function MapPageContent() {
         const apiKey = process.env.NEXT_PUBLIC_GEOAPIFY_KEY;
         if (apiKey) {
           try {
-            const geoRes = await fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&apiKey=${apiKey}`);
+            // Restrict geocoding to Portugal (pt) and Finland (fi)
+            const geoRes = await fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&filter=countrycode:pt,fi&apiKey=${apiKey}`);
             const geoData = await geoRes.json();
 
             if (geoData.features && geoData.features.length > 0) {
@@ -408,7 +427,7 @@ function MapPageContent() {
                 entityType: 'CITY', // Use CITY icon for generic places
                 title: feature.properties.formatted || query,
                 description: 'Geocoded Location',
-                subtype: feature.properties.category || 'Location',
+                subtype: feature.properties.category || query, // Use query as fallback for image matching
                 latitude: placeLat,
                 longitude: placeLng,
                 status: 'AVAILABLE',
@@ -502,11 +521,24 @@ function MapPageContent() {
           });
           const data = await response.json();
           if (data.data) {
-            setPosts(data.data);
+            // FILTER FOR HOMEOWNER: Only show posts WITHOUT accepted offers
+            const userData = localStorage.getItem('user');
+            let filteredData = data.data;
+            if (userData) {
+              const user = JSON.parse(userData);
+              if (user.role === 'HOMEOWNER') {
+                filteredData = data.data.filter((p: any) => {
+                  // Only posts that don't have an 'ACCEPTED' offer
+                  return !p.offers?.some((o: any) => o.status === 'ACCEPTED');
+                });
+              }
+            }
+
+            setPosts(filteredData);
             setLeftPanelTitle('My Posts');
             setLeftPanelContent(
               <SearchResults
-                posts={data.data}
+                posts={filteredData}
                 loading={false}
                 onPostClick={(post) => {
                   setSelectedPost(post);
@@ -538,13 +570,39 @@ function MapPageContent() {
         }
       }
     } else if (item === 'projects') {
-      setLeftPanelTitle('Projects / Offers');
+      const userData = localStorage.getItem('user');
+      let userRole: string | null = null;
+      if (userData) {
+        try {
+          userRole = JSON.parse(userData).role;
+        } catch { }
+      }
+
+      const showCreateForm = () => {
+        setLeftPanelTitle('Create Project');
+        setLeftPanelContent(
+          <CreateProjectForm
+            onSuccess={() => {
+              setActiveMenuItem('projects');
+              handleMenuItemClick('projects');
+              toast.success("Project created successfully!");
+            }}
+            onCancel={() => {
+              setActiveMenuItem('projects');
+              handleMenuItemClick('projects');
+            }}
+          />
+        );
+      };
+
+      setLeftPanelTitle(userRole === 'HOMEOWNER' ? 'My Projects' : 'Projects / Offers');
       setLeftPanelContent(
         <ProjectsOffersTab
           onItemClick={(item) => {
             centerMap(item.lat, item.lng);
           }}
           onMapCenter={centerMap}
+          onCreateProject={userRole === 'HOMEOWNER' ? showCreateForm : undefined}
         />
       );
     } else if (item === 'orders') {
@@ -745,6 +803,7 @@ function MapPageContent() {
       leftPanelContent={leftPanelContent}
       activeMenuItem={activeMenuItem}
       onMenuItemClick={handleMenuItemClick}
+      loading={loading}
     >
       <div
         ref={mapContainer}

@@ -46,6 +46,9 @@ interface Post {
   vin?: string;
   gearbox?: string;
   inspectionPassed?: boolean;
+  // External links
+  buyUrl?: string;
+  videoUrl?: string;
 }
 
 interface PostDetailProps {
@@ -178,6 +181,15 @@ export function PostDetail({
         <div>
           <h3 className="font-semibold text-white mb-2">Description</h3>
           <p className="text-gray-300">{post.description}</p>
+          {post.videoUrl && (
+            <div className="mt-4">
+              <Button variant="link" className="p-0 text-primary h-auto" asChild>
+                <a href={post.videoUrl} target="_blank" rel="noopener noreferrer">
+                  Watch Video Trailer
+                </a>
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -339,6 +351,26 @@ export function PostDetail({
 
       {/* Actions */}
       <div className="flex flex-col space-y-2 pt-4 border-t border-gray-800">
+        {post.buyUrl && (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              asChild
+            >
+              <a href={post.buyUrl} target="_blank" rel="noopener noreferrer">
+                Rent Now
+              </a>
+            </Button>
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              asChild
+            >
+              <a href={post.buyUrl} target="_blank" rel="noopener noreferrer">
+                Buy Now
+              </a>
+            </Button>
+          </div>
+        )}
         {showOfferButton && (
           <Button
             className="w-full bg-primary hover:bg-primary/90 cursor-pointer"

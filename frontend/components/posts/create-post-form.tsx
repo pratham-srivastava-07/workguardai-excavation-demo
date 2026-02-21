@@ -77,6 +77,20 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
 
   const savedState = loadSavedState();
 
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setUserRole(user.role);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+  }, []);
+
   const [type, setType] = useState<'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE'>(savedState.type || 'MATERIAL');
   const [subtype, setSubtype] = useState(savedState.subtype || '');
   const [title, setTitle] = useState(savedState.title || '');
@@ -98,6 +112,8 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
   const [hazardousMaterials, setHazardousMaterials] = useState(savedState.hazardousMaterials || false);
   const [structuralItems, setStructuralItems] = useState(savedState.structuralItems || false);
   const [socialLink, setSocialLink] = useState(savedState.socialLink || '');
+  const [buyUrl, setBuyUrl] = useState(savedState.buyUrl || '');
+  const [videoUrl, setVideoUrl] = useState(savedState.videoUrl || '');
   const [hourlyRate, setHourlyRate] = useState(savedState.hourlyRate || '');
   const [dailyRate, setDailyRate] = useState(savedState.dailyRate || '');
   const [rentalDuration, setRentalDuration] = useState(savedState.rentalDuration || '');
@@ -130,7 +146,8 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       latitude, longitude, address, condition, availabilityDate,
       images, pickupAllowed, transportNeeded, canCompanyCollect,
       permitForReuse, hazardousMaterials, structuralItems,
-      socialLink, hourlyRate, dailyRate, rentalDuration,
+      socialLink, buyUrl, videoUrl, hourlyRate, dailyRate, rentalDuration,
+      km, year, color, vin, gearbox, inspectionPassed
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -323,10 +340,11 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       return;
     }
 
-    if (images.length < 2) {
+    const minImages = userRole === 'COMPANY' ? 3 : 2;
+    if (images.length < minImages) {
       toast({
         title: 'Images Required',
-        description: 'Please upload at least 2 images',
+        description: `Please upload at least ${minImages} images`,
         variant: 'destructive',
       });
       return;
@@ -353,7 +371,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
           type, subtype, title, description, quantity, unit, price, images,
           latitude, longitude, address, condition, availabilityDate,
           pickupAllowed, transportNeeded, canCompanyCollect, permitForReuse,
-          hazardousMaterials, structuralItems, socialLink, hourlyRate,
+          hazardousMaterials, structuralItems, socialLink, buyUrl, videoUrl, hourlyRate,
           dailyRate, rentalDuration, km, year, color, vin, gearbox, inspectionPassed
         };
         localStorage.setItem('postDraft', JSON.stringify(draft));
@@ -396,6 +414,8 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       formData.append('hazardousMaterials', hazardousMaterials.toString());
       formData.append('structuralItems', structuralItems.toString());
       if (socialLink) formData.append('socialLink', socialLink);
+      if (buyUrl) formData.append('buyUrl', buyUrl);
+      if (videoUrl) formData.append('videoUrl', videoUrl);
       if (hourlyRate) formData.append('hourlyRate', (Math.round(parseFloat(hourlyRate) * 100)).toString());
       if (dailyRate) formData.append('dailyRate', (Math.round(parseFloat(dailyRate) * 100)).toString());
       if (rentalDuration) formData.append('rentalDuration', rentalDuration);
@@ -482,22 +502,29 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       <div>
         <Label className="text-white mb-3 block font-medium">Post Type *</Label>
         <div className="flex space-x-2">
-          {(['MATERIAL', 'SERVICE', 'SPACE', 'VEHICLE'] as const).map((t) => (
-            <Button
-              key={t}
-              type="button"
-              variant={type === t ? 'default' : 'outline'}
-              onClick={() => handleTypeChange(t)}
-              className={cn(
-                "flex-1 transition-all",
-                type === t
-                  ? "bg-primary hover:bg-primary/90"
-                  : "border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white"
-              )}
-            >
-              {t}
-            </Button>
-          ))}
+          {(['MATERIAL', 'SERVICE', 'SPACE', 'VEHICLE'] as const)
+            .filter(t => {
+              if (userRole === 'COMPANY' || userRole === 'BUSINESS') {
+                return t === 'MATERIAL' || t === 'VEHICLE';
+              }
+              return true;
+            })
+            .map((t) => (
+              <Button
+                key={t}
+                type="button"
+                variant={type === t ? 'default' : 'outline'}
+                onClick={() => handleTypeChange(t)}
+                className={cn(
+                  "flex-1 transition-all",
+                  type === t
+                    ? "bg-primary hover:bg-primary/90"
+                    : "border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white"
+                )}
+              >
+                {t}
+              </Button>
+            ))}
         </div>
       </div>
 
@@ -787,7 +814,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
 
       <div>
         <Label className="text-white mb-2 block font-medium">
-          Images * (2-6 required) - {images.length}/6
+          Images * ({userRole === 'COMPANY' ? '3-6' : '2-6'} required) - {images.length}/6
         </Label>
         <div className="mt-2 space-y-2">
           <div className="grid grid-cols-3 gap-2">
@@ -853,6 +880,30 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
           className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
         />
       </div>
+
+      <div>
+        <Label className="text-white mb-2 block font-medium">External Link (Buy / Rent URL)</Label>
+        <Input
+          type="url"
+          value={buyUrl}
+          onChange={(e) => setBuyUrl(e.target.value)}
+          placeholder="https://equipadealuguer.com/..."
+          className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+        />
+      </div>
+
+      {(userRole === 'COMPANY' || userRole === 'BUSINESS') && (
+        <div>
+          <Label className="text-white mb-2 block font-medium">Video URL (Max 1 min)</Label>
+          <Input
+            type="url"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="https://youtube.com/..."
+            className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+          />
+        </div>
+      )}
 
       <div className="flex space-x-2 pt-4 border-t border-gray-800">
         <Button

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "tsc -b && node dist/server.js",
-    "build": "tsc"
+    "build": "tsc",
+    "prisma:generate": "prisma generate --schema ../backend/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
