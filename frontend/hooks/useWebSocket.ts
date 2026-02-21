@@ -20,16 +20,10 @@ interface Assignment {
 }
 
 export function useWebSocket(token: string | null) {
-    const [socket, setSocket] = useState<WebSocket | null>(null);
-    // Messages grouped by roomId or just a flat list? Let's keep flat list and filter in UI for now
-    // But ideally we want to know which room we are in. 
-    const [messages, setMessages] = useState<Message[]>([]);
+    const socketRef = useRef<WebSocket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-
-    // State for assignments (mainly for Company view)
+    const [messages, setMessages] = useState<Message[]>([]);
     const [assignments, setAssignments] = useState<Assignment[]>([]);
-
-    // State for current active room (mainly for Homeowner view)
     const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
     const [assignedCompanyId, setAssignedCompanyId] = useState<string | null>(null);
 
@@ -38,12 +32,18 @@ export function useWebSocket(token: string | null) {
     const connect = useCallback(() => {
         if (!token) return;
 
-        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
-            return;
+        // Cleanup existing socket if any
+        if (socketRef.current) {
+            if (socketRef.current.readyState === WebSocket.OPEN || socketRef.current.readyState === WebSocket.CONNECTING) {
+                return;
+            }
+            socketRef.current.close();
+            socketRef.current = null;
         }
 
         console.log('Connecting to WebSocket...');
         const ws = new WebSocket(`${WS_URL}?token=${token}`);
+        socketRef.current = ws;
 
         ws.onopen = () => {
             console.log('WebSocket connected');
@@ -56,48 +56,32 @@ export function useWebSocket(token: string | null) {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-
                 switch (data.type) {
                     case 'HISTORY':
-                        // data.payload is array of messages
                         setMessages(prev => {
-                            // Merge history: prevent duplicates
                             const newMsgs = data.payload as Message[];
                             const existingIds = new Set(prev.map(m => m.id));
                             const uniqueNew = newMsgs.filter(m => !existingIds.has(m.id));
                             return [...prev, ...uniqueNew].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                         });
                         break;
-
                     case 'NEW_MESSAGE':
                         setMessages(prev => [...prev, data.payload]);
                         break;
-
                     case 'ASSIGNED':
-                        // For Homeowner: payload = { companyId, roomId }
                         setAssignedCompanyId(data.payload.companyId);
                         setActiveRoomId(data.payload.roomId);
                         break;
-
                     case 'ASSIGNMENTS':
-                        // For Company: payload = [ { room: {...}, homeowner: {...} } ]
-                        // We map this to a cleaner structure if needed, or just use raw
-                        // For now let's store raw or flattened assignments
                         setAssignments(data.payload);
                         break;
-
                     case 'INFO':
                         console.log('WS Info:', data.message);
                         break;
-
                     case 'ERROR':
                         console.error('WS Error:', data.message);
                         break;
-
-                    default:
-                        console.log('Unknown WS message type:', data.type);
                 }
-
             } catch (err) {
                 console.error('Failed to parse WS message', err);
             }
@@ -106,9 +90,9 @@ export function useWebSocket(token: string | null) {
         ws.onclose = () => {
             console.log('WebSocket disconnected');
             setIsConnected(false);
-            setSocket(null);
+            socketRef.current = null;
 
-            // Attempt reconnect
+            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
             reconnectTimeoutRef.current = setTimeout(() => {
                 connect();
             }, 3000);
@@ -118,8 +102,6 @@ export function useWebSocket(token: string | null) {
             console.error('WebSocket error:', error);
             ws.close();
         };
-
-        setSocket(ws);
     }, [token]);
 
     useEffect(() => {
@@ -127,8 +109,10 @@ export function useWebSocket(token: string | null) {
             connect();
         }
         return () => {
-            if (socket) {
-                socket.close();
+            if (socketRef.current) {
+                socketRef.current.onclose = null; // Prevent reconnect on intentional unmount
+                socketRef.current.close();
+                socketRef.current = null;
             }
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
@@ -137,21 +121,14 @@ export function useWebSocket(token: string | null) {
     }, [token, connect]);
 
     const sendMessage = useCallback((content: string, roomId?: string) => {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            // For Homeowner, roomId is optional (server knows), but good to send if we have it
-            // For Company, roomId is required (or they need to know who they are talking to)
-            // Hook user should pass roomId if known
+        const ws = socketRef.current;
+        if (ws && ws.readyState === WebSocket.OPEN) {
             const targetRoomId = roomId || activeRoomId;
-
-            const payload = {
-                content,
-                roomId: targetRoomId
-            };
-            socket.send(JSON.stringify(payload));
+            socketRef.current?.send(JSON.stringify({ content, roomId: targetRoomId }));
         } else {
             console.warn('Socket not connected');
         }
-    }, [socket, activeRoomId]);
+    }, [activeRoomId]);
 
     return {
         isConnected,
