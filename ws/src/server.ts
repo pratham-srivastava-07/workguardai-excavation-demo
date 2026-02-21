@@ -11,7 +11,7 @@ import http from "http"
 dotenv.config();
 
 const PORT = process.env.PORT || 8000;
-const server =http.createServer()
+const server = http.createServer()
 const wss = new WebSocketServer({ server });
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -107,4 +107,8 @@ wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
         console.log('Connection rejected:', error);
         ws.close(1008, 'Invalid token');
     }
+});
+
+server.listen(PORT, () => {
+    console.log(`HTTP/WebSocket server listening on port ${PORT}`);
 });
