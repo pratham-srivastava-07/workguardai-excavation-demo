@@ -21,6 +21,11 @@ wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
     const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
     const token = url.searchParams.get('token');
 
+    let isAlive = true;
+    ws.on('pong', () => {
+        isAlive = true;
+    });
+
     if (!token) {
         ws.close(1008, 'Token required');
         return;
@@ -78,12 +83,23 @@ wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
         });
 
         ws.on('close', () => {
+            clearInterval(heartbeatInterval);
             handleDisconnect(userId, ws);
         });
 
         ws.on('error', (error: Error) => {
             console.error(`WebSocket error for user ${userId}:`, error);
         });
+
+        // 3. Keep-alive heartbeat (every 20s)
+        const heartbeatInterval = setInterval(() => {
+            if (isAlive === false) {
+                console.log(`Terminating stale connection for user: ${userId}`);
+                return ws.terminate();
+            }
+            isAlive = false;
+            ws.ping();
+        }, 20000);
 
     } catch (error) {
         console.log('Connection rejected:', error);
