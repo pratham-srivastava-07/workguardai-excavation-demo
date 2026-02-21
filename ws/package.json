@@ -8,7 +8,7 @@
     "dev": "npm run prisma:generate && tsc -b && node dist/server.js",
     "build": "npm run prisma:generate && tsc",
     "postinstall": "npm run prisma:generate",
-    "prisma:generate": "npx prisma generate --schema ../backend/prisma/schema.prisma"
+    "prisma:generate": "npx prisma@6.16.1 generate --schema ../backend/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
