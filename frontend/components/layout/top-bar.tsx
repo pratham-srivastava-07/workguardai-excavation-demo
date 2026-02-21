@@ -55,9 +55,6 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
       {/* Menu Items - Desktop */}
       {/* Menu Items - Desktop */}
       <div className="hidden md:flex items-center space-x-6">
-        <Link href="/about" className="text-sm text-gray-300 hover:text-white transition-colors">
-          About
-        </Link>
         <Link href="/contact" className="text-sm text-gray-300 hover:text-white transition-colors">
           Contact
         </Link>
@@ -95,7 +92,6 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
           <>
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-300">
               <User className="w-4 h-4" />
-              <span>{user?.name || 'User'}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={onLogout}>
               <LogOut className="w-4 h-4 mr-2" />
@@ -129,7 +125,6 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
       {menuOpen && (
         <div className="absolute top-16 left-0 right-0 bg-black border-b border-gray-800 md:hidden">
           <div className="flex flex-col p-4 space-y-3">
-            <Link href="/about" className="text-sm text-gray-300">About</Link>
             <Link href="/contact" className="text-sm text-gray-300">Contact</Link>
             {isAuthenticated && user?.role === 'HOMEOWNER' && (
               <Link href="/homeowner-dashboard" className="text-sm text-gray-300">

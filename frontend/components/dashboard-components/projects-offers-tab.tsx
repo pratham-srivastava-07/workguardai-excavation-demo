@@ -52,9 +52,10 @@ interface ExtendedOffer extends Omit<Offer, 'post' | 'user' | 'company'> {
 interface ProjectsOffersTabProps {
   onItemClick?: (item: { type: 'project' | 'offer' | 'post'; id: string; lat: number; lng: number }) => void;
   onMapCenter?: (lat: number, lng: number) => void;
+  onCreateProject?: () => void;
 }
 
-export function ProjectsOffersTab({ onItemClick, onMapCenter }: ProjectsOffersTabProps) {
+export function ProjectsOffersTab({ onItemClick, onMapCenter, onCreateProject }: ProjectsOffersTabProps) {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [offersMade, setOffersMade] = useState<ExtendedOffer[]>([]);
@@ -149,36 +150,48 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter }: ProjectsOffersTa
         {userRole === 'HOMEOWNER' && (
           <TabsContent value="projects" className="mt-4">
             <div className="space-y-4">
-              {projects.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">No projects yet</p>
+              <Button
+                onClick={onCreateProject}
+                className="w-full bg-primary hover:bg-primary/90 text-white mb-2"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Project
+              </Button>
+
+              {projects
+                .filter(p => ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'].includes(p.status))
+                .length === 0 ? (
+                <p className="text-gray-400 text-center py-8">No active or completed projects yet</p>
               ) : (
-                projects.map((project) => (
-                  <Card
-                    key={project.id}
-                    className="bg-gray-900 border-gray-800 cursor-pointer hover:bg-gray-850 transition-colors"
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-white">{project.title}</CardTitle>
+                projects
+                  .filter(p => ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'].includes(p.status))
+                  .map((project) => (
+                    <Card
+                      key={project.id}
+                      className="bg-gray-900 border-gray-800 cursor-pointer hover:bg-gray-850 transition-colors"
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-white">{project.title}</CardTitle>
+                          </div>
+                          <Badge className="bg-gray-700 text-white">
+                            {project.status.replace('_', ' ')}
+                          </Badge>
                         </div>
-                        <Badge className="bg-gray-700 text-white">
-                          {project.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-4 text-sm text-gray-400">
-                        {project.size && <span>Size: {project.size}m²</span>}
-                        {project.budgetMin && project.budgetMax && (
-                          <span>
-                            Budget: €{project.budgetMin.toLocaleString()} - €{project.budgetMax.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex gap-4 text-sm text-gray-400">
+                          {project.size && <span>Size: {project.size}m²</span>}
+                          {project.budgetMin && project.budgetMax && (
+                            <span>
+                              Budget: €{project.budgetMin.toLocaleString()} - €{project.budgetMax.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
               )}
             </div>
           </TabsContent>
@@ -338,17 +351,17 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter }: ProjectsOffersTa
                       </div>
                     )}
                     {offer.company && (
-                      <OfferActions 
-                        offerId={offer.id} 
-                        currentStatus={offer.status} 
+                      <OfferActions
+                        offerId={offer.id}
+                        currentStatus={offer.status}
                         isHomeowner={userRole === 'HOMEOWNER'}
                         onStatusChange={(newStatus) => {
                           // Update the offer status in the UI
                           if (offer.status === 'PENDING') {
-                            setOffersReceived(prev => 
-                              prev.map(o => 
-                                o.id === offer.id 
-                                  ? { ...o, status: newStatus } 
+                            setOffersReceived(prev =>
+                              prev.map(o =>
+                                o.id === offer.id
+                                  ? { ...o, status: newStatus }
                                   : o
                               )
                             );

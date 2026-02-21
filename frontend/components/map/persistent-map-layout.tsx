@@ -17,6 +17,7 @@ interface PersistentMapLayoutProps {
   onLeftPanelClose?: () => void;
   activeMenuItem?: string;
   onMenuItemClick?: (item: string) => void;
+  loading?: boolean;
 }
 
 export function PersistentMapLayout({
@@ -29,6 +30,7 @@ export function PersistentMapLayout({
   onLeftPanelClose,
   activeMenuItem = 'map',
   onMenuItemClick,
+  loading = false,
 }: PersistentMapLayoutProps) {
   const [leftPanelOpen, setLeftPanelOpen] = useState(showLeftPanel);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -111,6 +113,16 @@ export function PersistentMapLayout({
           <div className="absolute inset-0 w-full h-full z-0">
             {children}
           </div>
+
+          {/* Loading Overlay */}
+          {loading && (
+            <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+              <div className="bg-gray-900 border border-gray-800 p-4 rounded-xl shadow-2xl flex flex-col items-center space-y-3">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-white font-medium text-sm animate-pulse">Searching...</p>
+              </div>
+            </div>
+          )}
 
           {/* Left Panel Overlay - Above map */}
           <LeftPanel

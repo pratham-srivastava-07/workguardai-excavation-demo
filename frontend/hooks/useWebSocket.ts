@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 
-const WS_URL = 'ws://localhost:8080'; // Should be env var
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
 
 interface Message {
     id: string;

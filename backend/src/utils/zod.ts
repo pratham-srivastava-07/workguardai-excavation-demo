@@ -1,23 +1,23 @@
 import zod from "zod"
 
 export const signupBody = zod.object({
-    name: zod.string(),
-    email: zod.email(),
-    password: zod.string().min(6),
-    role: zod.enum(["HOMEOWNER", "COMPANY", "CITY"]).optional(),
+  name: zod.string(),
+  email: zod.email(),
+  password: zod.string().min(6),
+  role: zod.enum(["HOMEOWNER", "COMPANY", "CITY"]).optional(),
 })
 
 export type SignupBody = zod.infer<typeof signupBody>;
 
 export const signinBody = zod.object({
-    email: zod.email(),
-    password: zod.string().min(6)
+  email: zod.email(),
+  password: zod.string().min(6)
 })
 
 export const contractorBody = zod.object({
-    companyName: zod.string(),
-    services: zod.json(),
-    description: zod.string(),
+  companyName: zod.string(),
+  services: zod.json(),
+  description: zod.string(),
 })
 
 export type ContractorBody = zod.infer<typeof contractorBody>;
@@ -26,39 +26,43 @@ export const projectBodySchema = zod.object({
   title: zod.string()
     .min(5, "Title must be at least 5 characters")
     .max(100, "Title must be less than 100 characters"),
-  
+
   description: zod.string()
     .max(1000, "Description must be less than 1000 characters")
     .optional(),
-  
-  projectType: zod.enum([
-    "kitchen_renovation",
-    "bathroom_renovation", 
-    "living_room_renovation",
-    "bedroom_renovation",
-    "full_house_renovation",
-    "outdoor_renovation",
-    "other"
-  ], {
-    message: "Invalid project type"
-  }),
-  
-  size: zod.number()
+
+  projectType: zod.string().min(1, "Project type is required"),
+
+  size: zod.coerce.number()
     .min(1, "Size must be at least 1 m²")
     .max(1000, "Size cannot exceed 1000 m²")
     .optional(),
-  
+
   materials: zod.string()
     .max(200, "Materials description too long")
     .optional(),
-  
-  budgetMin: zod.number()
-    .min(100, "Minimum budget must be at least €100")
+
+  budgetMin: zod.coerce.number()
+    .min(1, "Minimum budget must be positive")
     .optional(),
-  
-  budgetMax: zod.number()
-    .min(100, "Maximum budget must be at least €100")
-    .optional()
+
+  budgetMax: zod.coerce.number()
+    .min(1, "Maximum budget must be positive")
+    .optional(),
+
+  // New fields
+  streetAddress: zod.string().optional(),
+  city: zod.string().optional(),
+  postalCode: zod.string().optional(),
+  country: zod.string().optional(),
+  contactEmail: zod.string().email().optional().or(zod.literal("")),
+  contactPhone: zod.string().optional(),
+  transportNeeded: zod.coerce.boolean().optional(),
+  materialsNeeded: zod.coerce.boolean().optional(),
+  startDate: zod.string().datetime().optional().or(zod.string().regex(/^\d{4}-\d{2}-\d{2}$/).transform(val => new Date(val).toISOString())).optional(),
+  endDate: zod.string().datetime().optional().or(zod.string().regex(/^\d{4}-\d{2}-\d{2}$/).transform(val => new Date(val).toISOString())).optional(),
+  images: zod.array(zod.string()).optional(),
+  videoUrl: zod.string().optional(),
 }).refine((data: any) => {
   if (data.budgetMin && data.budgetMax) {
     return data.budgetMax >= data.budgetMin;
@@ -79,34 +83,34 @@ export const projectUpdateSchema = zod.object({
 // Quote submission schema
 export const quoteSubmissionSchema = zod.object({
   projectId: zod.string().cuid("Invalid project ID"),
-  
+
   totalAmount: zod.number()
     .min(1, "Total amount must be positive"),
-  
+
   laborHours: zod.number()
     .min(0, "Labor hours cannot be negative")
     .optional(),
-  
+
   laborCost: zod.number()
     .min(0, "Labor cost cannot be negative")
     .optional(),
-  
+
   materialsCost: zod.number()
     .min(0, "Materials cost cannot be negative")
     .optional(),
-  
+
   extrasCost: zod.number()
     .min(0, "Extras cost cannot be negative")
     .optional(),
-  
+
   notes: zod.string()
     .max(1000, "Notes must be less than 1000 characters")
     .optional(),
-  
+
   validUntil: zod.string()
     .datetime("Invalid date format")
     .optional(),
-  
+
   lineItems: zod.array(zod.object({
     category: zod.string().min(1, "Category is required"),
     description: zod.string().min(1, "Description is required"),

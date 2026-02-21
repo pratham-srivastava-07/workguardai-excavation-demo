@@ -1,4 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import { IncomingMessage } from 'http';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { handleMessage, handleDisconnect } from './handler';
@@ -16,7 +17,7 @@ if (!JWT_SECRET) console.warn('Warning: JWT_SECRET missing');
 
 console.log(`WebSocket server started on port ${port} (Production Mode)`);
 
-wss.on('connection', async (ws: WebSocket, req) => {
+wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
     const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
     const token = url.searchParams.get('token');
 
@@ -80,7 +81,7 @@ wss.on('connection', async (ws: WebSocket, req) => {
             handleDisconnect(userId, ws);
         });
 
-        ws.on('error', (error) => {
+        ws.on('error', (error: Error) => {
             console.error(`WebSocket error for user ${userId}:`, error);
         });
 

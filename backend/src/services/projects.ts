@@ -9,6 +9,20 @@ interface CreateProjectInput {
   budgetMin?: number;
   budgetMax?: number;
   homeownerId: string;
+
+  // New fields
+  streetAddress?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  transportNeeded?: boolean;
+  materialsNeeded?: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  images?: string[];
+  videoUrl?: string;
 }
 
 // Create a new project
@@ -16,7 +30,7 @@ export async function createProject(data: CreateProjectInput) {
   try {
     // Calculate predictive cost based on project type and size
     const predictedCost = calculatePredictiveCost(data.projectType, data.size);
-    
+
     const project = await prismaClient.project.create({
       data: {
         ...data,
@@ -272,14 +286,14 @@ export async function updateProjectStatus(projectId: string, status: string, hom
 
 
 export async function getHomeOwnerProjectById(id: string) {
-    try {
-        const result =  await prismaClient.project.findUnique({
-            where: { id: id },
-            select: { homeownerId: true }
-        });
+  try {
+    const result = await prismaClient.project.findUnique({
+      where: { id: id },
+      select: { homeownerId: true }
+    });
 
-        return result;
-    } catch(error: any){
-        console.log(`Error getting homeowner project ${error}`);
-    }
+    return result;
+  } catch (error: any) {
+    console.log(`Error getting homeowner project ${error}`);
+  }
 }

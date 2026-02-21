@@ -45,7 +45,7 @@ export function LeftPanel({ children, isOpen, onClose, onToggle, title, classNam
                   variant="ghost"
                   size="sm"
                   onClick={onToggle}
-                  className="md:hidden text-gray-400 hover:text-white cursor-pointer"
+                  className="text-gray-400 hover:text-white cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>

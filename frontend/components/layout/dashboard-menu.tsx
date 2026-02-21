@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Map, Package, Briefcase, ShoppingCart, MessageSquare, Wallet, Settings, HelpCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Package, Briefcase, ShoppingCart, MessageSquare, Wallet, Settings, HelpCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +11,6 @@ interface DashboardMenuProps {
 }
 
 const allMenuItems = [
-  { id: 'map', label: 'Map', icon: Map },
   { id: 'create-post', label: 'Create Post', icon: Package, highlight: true },
   { id: 'posts', label: 'My Posts', icon: Package },
   { id: 'projects', label: 'Projects / Offers', icon: Briefcase },
@@ -22,14 +21,14 @@ const allMenuItems = [
   { id: 'help', label: 'Help', icon: HelpCircle },
 ];
 
-export function DashboardMenu({ activeItem = 'map', onItemClick }: DashboardMenuProps) {
+export function DashboardMenu({ activeItem = 'create-post', onItemClick }: DashboardMenuProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   // Filter menu items based on user role
   const menuItems = useMemo(() => {
     const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     let userRole: string | null = null;
-    
+
     if (userData) {
       try {
         const user = JSON.parse(userData);
@@ -49,6 +48,11 @@ export function DashboardMenu({ activeItem = 'map', onItemClick }: DashboardMenu
         return userRole !== 'HOMEOWNER';
       }
       return true;
+    }).map(item => {
+      if (item.id === 'projects' && userRole === 'HOMEOWNER') {
+        return { ...item, label: 'Project' };
+      }
+      return item;
     });
   }, []);
 
@@ -89,8 +93,8 @@ export function DashboardMenu({ activeItem = 'map', onItemClick }: DashboardMenu
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : item.highlight
-                  ? 'text-primary border border-primary/30 hover:bg-primary/10'
-                  : 'text-gray-300 hover:bg-gray-900'
+                    ? 'text-primary border border-primary/30 hover:bg-primary/10'
+                    : 'text-gray-300 hover:bg-gray-900'
               )}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
