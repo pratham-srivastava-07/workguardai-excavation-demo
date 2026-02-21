@@ -18,13 +18,13 @@
     "dotenv": "^16.4.5",
     "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.0",
-    "prisma": "6.16.1"
-  },
-  "devDependencies": {
+    "prisma": "6.16.1",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.7",
     "@types/ws": "^8.5.10",
-    "ts-node": "^10.9.2",
     "typescript": "^5.5.3"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
   }
 }
