@@ -5,8 +5,8 @@ import { Role, OfferStatus } from "@prisma/client";
 export async function getUserProjectsAndOffers(userId: string, role: Role) {
   try {
     if (role === "HOMEOWNER") {
-      // Get homeowner's projects and offers they received
-      const [projects, offersReceived] = await Promise.all([
+      // Get homeowner's projects, posts, and offers they received
+      const [projects, myPosts, offersReceived] = await Promise.all([
         prismaClient.project.findMany({
           where: {
             homeownerId: userId,
@@ -18,6 +18,18 @@ export async function getUserProjectsAndOffers(userId: string, role: Role) {
                 milestones: true,
               },
             },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        }),
+
+        prismaClient.post.findMany({
+          where: {
+            userId,
+            companyId: null, // Just materials
+            cityId: null,
+            status: { not: "DELETED" }
           },
           orderBy: {
             createdAt: "desc",
@@ -65,6 +77,7 @@ export async function getUserProjectsAndOffers(userId: string, role: Role) {
       return {
         data: {
           projects,
+          myPosts,
           offersReceived,
           offersMade: [], // Homeowners don't make offers
         },

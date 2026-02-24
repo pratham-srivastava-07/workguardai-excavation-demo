@@ -16,9 +16,9 @@ import { getImageArray, getCategoryImage } from '@/utils/imageHelper';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
+import { ExplorationDetail } from '@/components/map/exploration-detail';
 import { API_BASE_URL } from '@/constants/env';
 import { toast } from 'sonner';
-
 interface Post {
   id: string;
   type: 'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE';
@@ -44,58 +44,7 @@ interface Post {
   subOptions?: string[]; // e.g., ['Projects', 'Tenders']
 }
 
-const MOCK_ENTITIES: Post[] = [
-  {
-    id: 'mock-city-1',
-    type: 'SPACE', // Fallback type
-    entityType: 'CITY',
-    title: 'City of Lisbon',
-    description: 'Capital city with ongoing urban projects.',
-    subtype: 'Municipality',
-    latitude: 38.7223,
-    longitude: -9.1393,
-    status: 'AVAILABLE',
-    city: { cityName: 'Lisbon' },
-    subOptions: ['Projects', 'Tenders', 'Materials', 'Spaces'],
-    address: 'Praça do Comércio, Lisbon'
-  },
-  {
-    id: 'mock-business-1',
-    type: 'SERVICE',
-    entityType: 'BUSINESS',
-    title: 'BuildRight Construction',
-    description: 'Premium construction services and materials.',
-    subtype: 'General Contractor',
-    latitude: 38.7423,
-    longitude: -9.1593,
-    status: 'AVAILABLE',
-    company: { companyName: 'BuildRight Construction' },
-    subOptions: ['Services', 'Materials', 'Spaces', 'Transportation'],
-    address: 'Av. da Liberdade, Lisbon'
-  },
-  {
-    id: 'mock-homeowner-1',
-    type: 'SPACE',
-    entityType: 'HOMEOWNER',
-    title: 'Johns Renovation',
-    description: 'Renovating my historic apartment.',
-    subtype: 'Residential',
-    latitude: 38.7123,
-    longitude: -9.1293,
-    status: 'AVAILABLE',
-    user: { name: 'John Doe', role: 'HOMEOWNER' },
-    subOptions: ['Spaces', 'Materials', 'Projects', 'Transportation'],
-    address: 'Alfama, Lisbon'
-  }
-];
-
-export default function MapPage() {
-  return (
-    <>
-      <MapPageContent />
-    </>
-  );
-}
+const MOCK_ENTITIES: Post[] = [];
 
 function SignInRequiredPanel() {
   return (
@@ -136,6 +85,14 @@ function SignInRequiredPanel() {
   );
 }
 
+export default function MapPage() {
+  return (
+    <>
+      <MapPageContent />
+    </>
+  );
+}
+
 function MapPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
@@ -153,6 +110,24 @@ function MapPageContent() {
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(true);
+
+  // Initialize guest exploration state
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setLeftPanelTitle('Explore RenoWise');
+      setLeftPanelContent(
+        <ExplorationDetail
+          onSearchCategory={(cat) => handleSearch(cat)}
+          onExploreMore={() => {
+            setLeftPanelTitle('Help & Info');
+            handleMenuItemClick('help');
+          }}
+        />
+      );
+      setShowLeftPanel(true);
+    }
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -227,16 +202,8 @@ function MapPageContent() {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    // Filter mock entities based on search
-    const filteredMock = searchQuery
-      ? MOCK_ENTITIES.filter(e =>
-        e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        e.subtype.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      : MOCK_ENTITIES;
-
     // Add new markers
-    const allItems = [...posts, ...filteredMock];
+    const allItems = [...posts];
 
     allItems.forEach((post) => {
       const el = document.createElement('div');
@@ -376,7 +343,15 @@ function MapPageContent() {
       const data = await response.json();
 
       if (data.data && data.data.length > 0) {
-        setPosts(data.data);
+        let filteredData = data.data;
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.role === 'HOMEOWNER') {
+            filteredData = data.data.filter((p: any) => p.type === 'MATERIAL');
+          }
+        }
+        setPosts(filteredData);
         setLeftPanelTitle('Search Results');
         setLeftPanelContent(
           <SearchResults
@@ -435,21 +410,33 @@ function MapPageContent() {
                 address: feature.properties.formatted
               };
 
-              setPosts([locationPost]);
-              centerMap(placeLat, placeLng);
+              let filteredPosts: Post[] = [locationPost];
+              const userData = localStorage.getItem('user');
+              if (userData) {
+                const user = JSON.parse(userData);
+                if (user.role === 'HOMEOWNER' && locationPost.type !== 'MATERIAL') {
+                  filteredPosts = [];
+                }
+              }
+              setPosts(filteredPosts);
 
-              // Show it in result panel too
-              setLeftPanelTitle('Location Result');
-              setLeftPanelContent(
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg">{locationPost.title}</h3>
-                  <p className="text-gray-500 text-sm mb-4">{locationPost.address}</p>
-                  <Button onClick={() => centerMap(placeLat, placeLng)} className="w-full">
-                    Zoom to Location
-                  </Button>
-                </div>
-              );
-              setShowLeftPanel(true);
+              if (filteredPosts.length > 0) {
+                centerMap(placeLat, placeLng);
+                // Show it in result panel too
+                setLeftPanelTitle('Location Result');
+                setLeftPanelContent(
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg">{locationPost.title}</h3>
+                    <p className="text-gray-500 text-sm mb-4">{locationPost.address}</p>
+                    <Button onClick={() => centerMap(placeLat, placeLng)} className="w-full">
+                      Zoom to Location
+                    </Button>
+                  </div>
+                );
+                setShowLeftPanel(true);
+              } else {
+                toast("No matching results found for homeowners.");
+              }
 
             } else {
               setPosts([]);
@@ -664,10 +651,33 @@ function MapPageContent() {
     }
   };
 
+  const handleCreateProject = () => {
+    setLeftPanelTitle('Create Project');
+    setLeftPanelContent(
+      <CreateProjectForm
+        onSuccess={() => {
+          setActiveMenuItem('projects');
+          handleMenuItemClick('projects');
+          toast.success("Project created successfully!");
+        }}
+        onCancel={() => {
+          setActiveMenuItem('map');
+          handleMenuItemClick('map');
+        }}
+      />
+    );
+    setShowLeftPanel(true);
+  };
+
   const handleCreatePost = () => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      window.location.href = '/login?redirect=/map';
+      toast("Please sign in to create a post", {
+        action: {
+          label: "Sign In",
+          onClick: () => window.location.href = '/login'
+        }
+      });
       return;
     }
     setShowCreatePost(true);
@@ -684,6 +694,7 @@ function MapPageContent() {
           setShowCreatePost(false);
           setShowLeftPanel(false);
         }}
+        onSwitchToProject={handleCreateProject}
       />
     );
     setShowLeftPanel(true);
@@ -774,11 +785,11 @@ function MapPageContent() {
       });
 
       if (response.ok) {
-        alert('Post deleted successfully');
+        toast.success('Post deleted successfully');
         setShowLeftPanel(false);
         setSelectedPost(null);
-        // Refresh map/posts
-        window.location.reload();
+        // Remove the post from the local state to update the map without reload
+        setPosts(prev => prev.filter(p => p.id !== postId));
       } else {
         const data = await response.json();
         alert(data.message || 'Failed to delete post');

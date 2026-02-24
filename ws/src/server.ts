@@ -1,21 +1,23 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import { handleMessage, handleDisconnect } from './handler';
 import { connectionManager } from './services/ConnectionManager';
 import { assignmentService } from './services/AssignmentService';
 import prisma from './prisma';
+import http from "http"
 
-dotenv.config();
-
-const port = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 8080;
-const wss = new WebSocketServer({ port });
+const PORT = process.env.PORT || 8000;
+const server = http.createServer()
+const wss = new WebSocketServer({ server });
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) console.warn('Warning: JWT_SECRET missing');
 
-console.log(`WebSocket server started on port ${port} (Production Mode)`);
+console.log(`WebSocket server started on port ${PORT} (Production Mode)`);
 
 wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
     const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
@@ -105,4 +107,8 @@ wss.on('connection', async (ws: WebSocket, req: IncomingMessage) => {
         console.log('Connection rejected:', error);
         ws.close(1008, 'Invalid token');
     }
+});
+
+server.listen(PORT, () => {
+    console.log(`HTTP/WebSocket server listening on port ${PORT}`);
 });

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, X, Sparkles, AlertCircle, MapPin } from 'lucide-react';
+import { Upload, X, Sparkles, AlertCircle, MapPin, Plus, CheckCircle2, Calendar, DollarSign, Package, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { API_BASE_URL } from '@/constants/env';
@@ -15,23 +15,12 @@ const MATERIAL_SUBTYPES = [
   'paint', 'screws', 'posters', 'gravel', 'sand', 'curtains', 'curtain blinds'
 ];
 
-const SERVICE_SUBTYPES = [
-  'transport', 'demolition', 'rental of equipment', 'rental of vehicles'
-];
-
-const SPACE_SUBTYPES = [
-  'coworking', 'parking', 'hall', 'school', 'storage'
-];
-
-const VEHICLE_SUBTYPES = [
-  'car', 'van', 'truck', 'motorcycle', 'scooter', 'trailer'
-];
-
 const UNITS = ['m²', 'm³', 'pieces', 'liters', 'kilograms'];
 
 interface CreatePostFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  onSwitchToProject?: () => void;
   initialData?: any;
 }
 
@@ -61,7 +50,7 @@ const compressImage = (base64: string, maxWidth = 1200, quality = 0.8): Promise<
   });
 };
 
-export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostFormProps) {
+export function CreatePostForm({ onSuccess, onCancel, onSwitchToProject, initialData }: CreatePostFormProps) {
   const { toast } = useToast();
 
   const loadSavedState = () => {
@@ -91,7 +80,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
     }
   }, []);
 
-  const [type, setType] = useState<'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE'>(savedState.type || 'MATERIAL');
+  const [type, setType] = useState<'MATERIAL' | 'PROJECT'>(savedState.type || 'MATERIAL');
   const [subtype, setSubtype] = useState(savedState.subtype || '');
   const [title, setTitle] = useState(savedState.title || '');
   const [description, setDescription] = useState(savedState.description || '');
@@ -156,13 +145,14 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
     }
   };
 
-  const handleTypeChange = (newType: 'MATERIAL' | 'SERVICE' | 'SPACE' | 'VEHICLE') => {
+  const handleTypeChange = (newType: 'MATERIAL' | 'PROJECT') => {
     saveState();
     setType(newType);
-    const newSubtypes = newType === 'MATERIAL' ? MATERIAL_SUBTYPES :
-      newType === 'SERVICE' ? SERVICE_SUBTYPES :
-        newType === 'SPACE' ? SPACE_SUBTYPES : VEHICLE_SUBTYPES;
-    if (!newSubtypes.includes(subtype)) {
+    if (newType === 'PROJECT') {
+      if (onSwitchToProject) onSwitchToProject();
+      return;
+    }
+    if (!MATERIAL_SUBTYPES.includes(subtype)) {
       setSubtype('');
     }
   };
@@ -178,13 +168,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
     dailyRate, rentalDuration, latitude, longitude, km, year, color, vin, gearbox, inspectionPassed]);
 
   const getSubtypes = () => {
-    switch (type) {
-      case 'MATERIAL': return MATERIAL_SUBTYPES;
-      case 'SERVICE': return SERVICE_SUBTYPES;
-      case 'SPACE': return SPACE_SUBTYPES;
-      case 'VEHICLE': return VEHICLE_SUBTYPES;
-      default: return [];
-    }
+    return type === 'MATERIAL' ? MATERIAL_SUBTYPES : [];
   };
 
   const getLocation = () => {
@@ -313,10 +297,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
 
   const generateDescription = async () => {
     setGeneratingDescription(true);
-    let generated = `${type} - ${subtype}${quantity ? `, ${quantity} ${unit}` : ''}${condition ? `, ${condition}` : ''}${price ? `, €${price}` : ''}`;
-    if (type === 'VEHICLE') {
-      generated += `${km ? `, ${km}km` : ''}${year ? `, Year ${year}` : ''}${gearbox ? `, ${gearbox}` : ''}${color ? `, ${color}` : ''}`;
-    }
+    const generated = `MATERIAL - ${subtype}${quantity ? `, ${quantity} ${unit}` : ''}${condition ? `, ${condition}` : ''}${price ? `, €${price}` : ''}`;
     setDescription(generated);
     setGeneratingDescription(false);
     toast({
@@ -371,8 +352,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
           type, subtype, title, description, quantity, unit, price, images,
           latitude, longitude, address, condition, availabilityDate,
           pickupAllowed, transportNeeded, canCompanyCollect, permitForReuse,
-          hazardousMaterials, structuralItems, socialLink, buyUrl, videoUrl, hourlyRate,
-          dailyRate, rentalDuration, km, year, color, vin, gearbox, inspectionPassed
+          hazardousMaterials, structuralItems, socialLink, buyUrl, videoUrl
         };
         localStorage.setItem('postDraft', JSON.stringify(draft));
 
@@ -416,20 +396,8 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       if (socialLink) formData.append('socialLink', socialLink);
       if (buyUrl) formData.append('buyUrl', buyUrl);
       if (videoUrl) formData.append('videoUrl', videoUrl);
-      if (hourlyRate) formData.append('hourlyRate', (Math.round(parseFloat(hourlyRate) * 100)).toString());
-      if (dailyRate) formData.append('dailyRate', (Math.round(parseFloat(dailyRate) * 100)).toString());
-      if (rentalDuration) formData.append('rentalDuration', rentalDuration);
 
       // Vehicle fields
-      if (type === 'VEHICLE') {
-        if (km) formData.append('km', km);
-        if (year) formData.append('year', year);
-        if (color) formData.append('color', color);
-        if (vin) formData.append('vin', vin);
-        if (gearbox) formData.append('gearbox', gearbox);
-        formData.append('inspectionPassed', inspectionPassed.toString());
-      }
-
       setDebugInfo(`Sending multipart request to ${API_BASE_URL}/posts`);
 
       const url = initialData?.id
@@ -502,13 +470,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
       <div>
         <Label className="text-white mb-3 block font-medium">Post Type *</Label>
         <div className="flex space-x-2">
-          {(['MATERIAL', 'SERVICE', 'SPACE', 'VEHICLE'] as const)
-            .filter(t => {
-              if (userRole === 'COMPANY' || userRole === 'BUSINESS') {
-                return t === 'MATERIAL' || t === 'VEHICLE';
-              }
-              return true;
-            })
+          {(['MATERIAL', 'PROJECT'] as const)
             .map((t) => (
               <Button
                 key={t}
@@ -528,334 +490,260 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
         </div>
       </div>
 
-      <div>
-        <Label className="text-white mb-2 block font-medium">Subtype *</Label>
-        <Select value={subtype} onValueChange={setSubtype} required>
-          <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
-            <SelectValue placeholder="Select subtype" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900 border-gray-700">
-            {getSubtypes().map((st) => (
-              <SelectItem key={st} value={st} className="text-white">
-                {st}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label className="text-white mb-2 block font-medium">Title *</Label>
-        <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter post title"
-          className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
-          required
-        />
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <Label className="text-white font-medium">Description</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={generateDescription}
-            disabled={generatingDescription}
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            {generatingDescription ? 'Generating...' : 'AI Generate'}
-          </Button>
+      {/* Subtype Selector - Grid Based */}
+      <div className="space-y-3">
+        <Label className="text-sm font-semibold uppercase tracking-wider text-gray-400">Subtype *</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {getSubtypes().map((st) => (
+            <Button
+              key={st}
+              type="button"
+              variant={subtype === st ? 'default' : 'outline'}
+              onClick={() => setSubtype(st)}
+              className={cn(
+                "text-xs transition-all h-10",
+                subtype === st ? "bg-primary" : "border-gray-800 hover:bg-gray-900"
+              )}
+            >
+              {st}
+            </Button>
+          ))}
         </div>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter description or use AI to generate"
-          className="w-full min-h-[100px] p-3 border border-gray-700 bg-gray-900 text-white rounded-md placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Basic Info Section */}
+      <div className="space-y-4 pt-4">
+        <Label className="text-sm font-semibold uppercase tracking-wider text-gray-400">Basic Info</Label>
         <div>
-          <Label className="text-white mb-2 block font-medium">Quantity</Label>
+          <Label className="text-xs text-gray-500 mb-1 block">Title *</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter post title"
+            className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+            required
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-xs text-gray-500">Description</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={generateDescription}
+              disabled={generatingDescription}
+              className="h-7 text-xs"
+            >
+              <Sparkles className="w-3 h-3 mr-1" />
+              {generatingDescription ? 'Generating...' : 'AI Generate'}
+            </Button>
+          </div>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter description or use AI to generate"
+            className="w-full min-h-[100px] p-3 border border-gray-700 bg-gray-900 text-white rounded-md placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Logistics & Quantity Section */}
+      <div className="space-y-4 pt-4">
+        <Label className="text-sm font-semibold uppercase tracking-wider text-gray-400">Logistics & Quantity</Label>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">Quantity</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="0.00"
+              className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">Unit</Label>
+            <Select value={unit} onValueChange={setUnit}>
+              <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
+                <SelectValue placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-700">
+                {UNITS.map((u) => (
+                  <SelectItem key={u} value={u} className="text-white">
+                    {u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div className="space-y-4 pt-4">
+        <Label className="text-sm font-semibold uppercase tracking-wider text-gray-400">Pricing</Label>
+        <div>
+          <Label className="text-xs text-gray-500 mb-1 block">Price (€)</Label>
           <Input
             type="number"
             step="0.01"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
             placeholder="0.00"
             className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
           />
         </div>
-        <div>
-          <Label className="text-white mb-2 block font-medium">Unit</Label>
-          <Select value={unit} onValueChange={setUnit}>
-            <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
-              <SelectValue placeholder="Select unit" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
-              {UNITS.map((u) => (
-                <SelectItem key={u} value={u} className="text-white">
-                  {u}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
       </div>
 
-      <div>
-        <Label className="text-white mb-2 block font-medium">Price (€)</Label>
-        <Input
-          type="number"
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="0.00"
-          className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
-        />
-      </div>
+      {/* Location Section */}
+      <div className="space-y-4 pt-4">
+        <Label className="text-sm font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+          <MapPin className="w-4 h-4" /> Location *
+        </Label>
 
-      {(type === 'SERVICE' || type === 'SPACE') && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-white mb-2 block font-medium">Hourly Rate (€)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={hourlyRate}
-              onChange={(e) => setHourlyRate(e.target.value)}
-              className="bg-gray-900 border-gray-700 text-white"
-            />
-          </div>
-          <div>
-            <Label className="text-white mb-2 block font-medium">Daily Rate (€)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={dailyRate}
-              onChange={(e) => setDailyRate(e.target.value)}
-              className="bg-gray-900 border-gray-700 text-white"
-            />
-          </div>
-        </div>
-      )}
-
-      {type === 'VEHICLE' && (
-        <div className="space-y-4 border-t border-gray-800 pt-4">
-          <Label className="text-white text-lg font-semibold">Vehicle Details</Label>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-white mb-2 block font-medium">Kilometers (km)</Label>
-              <Input
-                type="number"
-                value={km}
-                onChange={(e) => setKm(e.target.value)}
-                className="bg-gray-900 border-gray-700 text-white"
-                placeholder="e.g. 150000"
-              />
-            </div>
-            <div>
-              <Label className="text-white mb-2 block font-medium">Registration Year</Label>
-              <Input
-                type="number"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                className="bg-gray-900 border-gray-700 text-white"
-                placeholder="e.g. 2018"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-white mb-2 block font-medium">Color</Label>
-              <Input
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="bg-gray-900 border-gray-700 text-white"
-                placeholder="e.g. White"
-              />
-            </div>
-            <div>
-              <Label className="text-white mb-2 block font-medium">Transmission</Label>
-              <Select value={gearbox} onValueChange={setGearbox}>
-                <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700">
-                  <SelectItem value="Manual" className="text-white">Manual</SelectItem>
-                  <SelectItem value="Automatic" className="text-white">Automatic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-white mb-2 block font-medium">VIN (Vehicle Identification Number)</Label>
-            <Input
-              value={vin}
-              onChange={(e) => setVin(e.target.value)}
-              className="bg-gray-900 border-gray-700 text-white"
-              placeholder="Optional"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={inspectionPassed}
-              onChange={(e) => setInspectionPassed(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-primary focus:ring-primary"
-            />
-            <span className="text-sm text-gray-300">Inspection Passed (Roadworthy)</span>
-          </div>
-        </div>
-      )}
-
-      {/* Location Section - Enhanced */}
-      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-white font-medium">Location * (Required)</Label>
+          <Label className="text-xs text-gray-500">Address / GPS</Label>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={getLocation}
             disabled={locationLoading}
+            className="h-7 text-xs"
           >
-            <MapPin className="w-4 h-4 mr-2" />
-            {locationLoading ? 'Getting Location...' : 'Use My Location'}
+            {locationLoading ? 'Getting...' : 'Use My GPS'}
           </Button>
         </div>
 
         <Input
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          placeholder="Enter address (optional)"
+          placeholder="e.g. Lisbon, Rua da Prata"
           className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
         />
 
-        {/* Manual Coordinate Entry */}
-        <div className="border border-gray-700 rounded-lg p-4 space-y-3 bg-gray-900/50">
-          <Label className="text-sm text-gray-400">Or Enter Coordinates Manually:</Label>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs text-gray-500">Latitude</Label>
-              <Input
-                type="number"
-                step="0.000001"
-                value={manualLat}
-                onChange={(e) => setManualLat(e.target.value)}
-                placeholder="e.g., 52.3676"
-                className="bg-gray-900 border-gray-700 text-white text-sm"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-gray-500">Longitude</Label>
-              <Input
-                type="number"
-                step="0.000001"
-                value={manualLng}
-                onChange={(e) => setManualLng(e.target.value)}
-                placeholder="e.g., 4.9041"
-                className="bg-gray-900 border-gray-700 text-white text-sm"
-              />
-            </div>
+        {/* Manual Coordinates */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label className="text-[10px] text-gray-500">Latitude</Label>
+            <Input
+              type="number"
+              value={manualLat}
+              onChange={(e) => setManualLat(e.target.value)}
+              className="bg-gray-900 border-gray-700 h-8 text-xs"
+            />
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleManualCoordinates}
-            className="w-full"
-          >
-            Set Coordinates
-          </Button>
+          <div className="space-y-1">
+            <Label className="text-[10px] text-gray-500">Longitude</Label>
+            <Input
+              type="number"
+              value={manualLng}
+              onChange={(e) => setManualLng(e.target.value)}
+              className="bg-gray-900 border-gray-700 h-8 text-xs"
+            />
+          </div>
         </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={handleManualCoordinates}
+          className="w-full h-8 text-xs"
+        >
+          Validate Coordinates
+        </Button>
 
         {latitude && longitude && (
-          <div className="p-3 bg-green-900/20 border border-green-800 rounded flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-green-500" />
-            <p className="text-xs text-green-400">
-              ✓ Location set: {latitude.toFixed(6)}, {longitude.toFixed(6)}
-            </p>
+          <div className="flex items-center space-x-2 text-[10px] text-green-500">
+            <CheckCircle2 className="w-3 h-3" />
+            <span>Location Verified: {latitude.toFixed(4)}, {longitude.toFixed(4)}</span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label className="text-white mb-2 block font-medium">Condition</Label>
-          <Select value={condition} onValueChange={setCondition}>
-            <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
-              <SelectValue placeholder="Select condition" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
-              <SelectItem value="new" className="text-white">New</SelectItem>
-              <SelectItem value="used" className="text-white">Used</SelectItem>
-              <SelectItem value="damaged" className="text-white">Damaged</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="text-white mb-2 block font-medium">Availability Date</Label>
-          <Input
-            type="date"
-            value={availabilityDate}
-            onChange={(e) => setAvailabilityDate(e.target.value)}
-            className="bg-gray-900 border-gray-700 text-white"
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label className="text-white mb-2 block font-medium">
-          Images * ({userRole === 'COMPANY' ? '3-6' : '2-6'} required) - {images.length}/6
+      {/* Media & Logistics Section */}
+      <div className="space-y-4 pt-4 border-t border-gray-800">
+        <Label className="text-sm font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+          <Upload className="w-4 h-4" /> Media Upload ({userRole === 'COMPANY' ? '3-6' : '2-6'} photos)
         </Label>
-        <div className="mt-2 space-y-2">
-          <div className="grid grid-cols-3 gap-2">
+
+        <div className="flex gap-4 items-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="border-dashed border-2 h-24 w-24 flex flex-col gap-2 flex-shrink-0"
+            onClick={() => document.getElementById('image-upload-post')?.click()}
+          >
+            <Plus className="w-6 h-6" />
+            <span className="text-[10px]">Add Photos</span>
+          </Button>
+          <input
+            id="image-upload-post"
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+
+          <div className="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {images.map((img, index) => (
-              <div key={index} className="relative aspect-square">
-                <img src={img} alt={`Upload ${index + 1}`} className="w-full h-full object-cover rounded" />
+              <div key={index} className="relative h-20 w-20 flex-shrink-0">
+                <img src={img} className="h-full w-full object-cover rounded" />
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  className="absolute -top-1 -right-1 bg-red-600 rounded-full p-0.5"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3 h-3 text-white" />
                 </button>
               </div>
             ))}
-            {images.length < 6 && (
-              <label className="aspect-square border-2 border-dashed border-gray-700 rounded flex items-center justify-center cursor-pointer hover:border-gray-600 bg-gray-900 hover:bg-gray-800">
-                <Upload className="w-6 h-6 text-gray-400" />
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.webp"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">Condition</Label>
+            <Select value={condition} onValueChange={setCondition}>
+              <SelectTrigger className="bg-gray-900 border-gray-700 text-white">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-700">
+                <SelectItem value="new" className="text-white">New</SelectItem>
+                <SelectItem value="used" className="text-white">Used</SelectItem>
+                <SelectItem value="damaged" className="text-white">Damaged</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">Available From</Label>
+            <Input
+              type="date"
+              value={availabilityDate}
+              onChange={(e) => setAvailabilityDate(e.target.value)}
+              className="bg-gray-900 border-gray-700 text-white"
+            />
           </div>
         </div>
       </div>
 
-      <div>
-        <Label className="text-white mb-2 block font-medium">Options</Label>
-        <div className="space-y-2 mt-2">
+      {/* Logistics & External Links Section */}
+      <div className="space-y-4 pt-4 border-t border-gray-800">
+        <Label className="text-sm font-semibold uppercase tracking-wider text-gray-400">Logistics & External</Label>
+
+        <div className="grid grid-cols-2 gap-y-3">
           {[
             { checked: pickupAllowed, setter: setPickupAllowed, label: 'Pickup Allowed' },
             { checked: transportNeeded, setter: setTransportNeeded, label: 'Transport Needed' },
-            { checked: canCompanyCollect, setter: setCanCompanyCollect, label: 'Can Company Collect' },
-            { checked: permitForReuse, setter: setPermitForReuse, label: 'Permit for Reuse' },
-            { checked: hazardousMaterials, setter: setHazardousMaterials, label: 'Hazardous Materials' },
-            { checked: structuralItems, setter: setStructuralItems, label: 'Structural Items' },
+            { checked: canCompanyCollect, setter: setCanCompanyCollect, label: 'Company Collect' },
+            { checked: permitForReuse, setter: setPermitForReuse, label: 'Reuse Permit' },
+            { checked: hazardousMaterials, setter: setHazardousMaterials, label: 'Hazardous' },
+            { checked: structuralItems, setter: setStructuralItems, label: 'Structural' },
           ].map(({ checked, setter, label }) => (
             <label key={label} className="flex items-center space-x-2 cursor-pointer">
               <input
@@ -864,56 +752,59 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
                 onChange={(e) => setter(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-700 bg-gray-900 text-primary focus:ring-primary"
               />
-              <span className="text-sm text-gray-300">{label}</span>
+              <span className="text-xs text-gray-300">{label}</span>
             </label>
           ))}
         </div>
-      </div>
 
-      <div>
-        <Label className="text-white mb-2 block font-medium">Social Link (Instagram, etc.)</Label>
-        <Input
-          type="url"
-          value={socialLink}
-          onChange={(e) => setSocialLink(e.target.value)}
-          placeholder="https://..."
-          className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
-        />
-      </div>
+        <div className="space-y-3 pt-2">
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">Social Link (Instagram/etc.)</Label>
+            <Input
+              type="url"
+              value={socialLink}
+              onChange={(e) => setSocialLink(e.target.value)}
+              placeholder="https://..."
+              className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+            />
+          </div>
 
-      <div>
-        <Label className="text-white mb-2 block font-medium">External Link (Buy / Rent URL)</Label>
-        <Input
-          type="url"
-          value={buyUrl}
-          onChange={(e) => setBuyUrl(e.target.value)}
-          placeholder="https://equipadealuguer.com/..."
-          className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
-        />
-      </div>
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">Buy / Rent URL</Label>
+            <Input
+              type="url"
+              value={buyUrl}
+              onChange={(e) => setBuyUrl(e.target.value)}
+              placeholder="https://..."
+              className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+            />
+          </div>
 
-      {(userRole === 'COMPANY' || userRole === 'BUSINESS') && (
-        <div>
-          <Label className="text-white mb-2 block font-medium">Video URL (Max 1 min)</Label>
-          <Input
-            type="url"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://youtube.com/..."
-            className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
-          />
+          {(userRole === 'COMPANY' || userRole === 'BUSINESS') && (
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Video Promo URL</Label>
+              <Input
+                type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="https://youtube.com/..."
+                className="bg-gray-900 border-gray-700 text-white placeholder:text-gray-500"
+              />
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
-      <div className="flex space-x-2 pt-4 border-t border-gray-800">
+      {/* Final Actions */}
+      <div className="flex space-x-2 pt-6 border-t border-gray-800">
         <Button
           type="button"
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 bg-primary hover:bg-primary/90 text-white"
-          size="lg"
+          className="flex-1 h-10 text-lg font-bold bg-primary hover:bg-primary/90"
         >
-          {loading ? (initialData?.id ? 'Updating...' : 'Posting...') : (initialData?.id ? 'Update Post' : 'Create Post')}
+          {loading ? 'Posting...' : (initialData?.id ? 'Update' : 'Post Now')}
+          {!loading && <CheckCircle2 className="ml-2 w-5 h-5" />}
         </Button>
         {onCancel && (
           <Button
@@ -923,7 +814,7 @@ export function CreatePostForm({ onSuccess, onCancel, initialData }: CreatePostF
               localStorage.removeItem(STORAGE_KEY);
               onCancel();
             }}
-            className="border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white"
+            className="border-gray-700 text-gray-300 hover:bg-gray-900 hover:text-white h-10 px-6"
           >
             Cancel
           </Button>

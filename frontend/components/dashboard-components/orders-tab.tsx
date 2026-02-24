@@ -49,11 +49,11 @@ export function OrdersTab({ onOrderClick, onMapCenter }: OrdersTabProps) {
   useEffect(() => {
     const fetchOrders = async () => {
       console.log("REACHED HERE");
-      
+
       try {
         const token = localStorage.getItem('accessToken');
         console.log("GOT TOKEN");
-        
+
         if (!token) return;
 
         const response = await fetch(`${API_BASE_URL}/orders`, {
@@ -63,7 +63,7 @@ export function OrdersTab({ onOrderClick, onMapCenter }: OrdersTabProps) {
           },
         });
         console.log("RESPONSE", response);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch orders');
         }
@@ -115,7 +115,7 @@ export function OrdersTab({ onOrderClick, onMapCenter }: OrdersTabProps) {
     <div className="p-6 space-y-4">
       <div>
         <h2 className="text-xl font-bold text-white mb-2">Orders</h2>
-        <p className="text-sm text-gray-400">Accepted offers on your material, space, and service posts</p>
+        <p className="text-sm text-gray-400">Accepted offers on your material posts</p>
       </div>
 
       <div className="space-y-4">
