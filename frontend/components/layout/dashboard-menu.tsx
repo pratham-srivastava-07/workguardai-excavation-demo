@@ -11,10 +11,9 @@ interface DashboardMenuProps {
 }
 
 const allMenuItems = [
-  { id: 'create-post', label: 'Create Post', icon: Package, highlight: true },
-  { id: 'posts', label: 'My Posts', icon: Package },
-  { id: 'projects', label: 'Projects / Offers', icon: Briefcase },
-  { id: 'orders', label: 'Orders', icon: ShoppingCart, roles: ['COMPANY', 'CITY'] }, // Only for Company and City
+  { id: 'create-post', label: 'Post a project / material', icon: Package, highlight: true },
+  { id: 'projects', label: 'Projects & Offers', icon: Briefcase },
+  { id: 'orders', label: 'Orders', icon: ShoppingCart, roles: ['COMPANY', 'CITY'] },
   { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'wallet', label: 'Wallet / Payments', icon: Wallet },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -48,11 +47,6 @@ export function DashboardMenu({ activeItem = 'create-post', onItemClick }: Dashb
         return userRole !== 'HOMEOWNER';
       }
       return true;
-    }).map(item => {
-      if (item.id === 'projects' && userRole === 'HOMEOWNER') {
-        return { ...item, label: 'Project' };
-      }
-      return item;
     });
   }, []);
 

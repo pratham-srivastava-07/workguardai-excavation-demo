@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Briefcase, DollarSign, Calendar, Plus } from 'lucide-react';
+import { MapPin, Briefcase, DollarSign, Calendar, Plus, ChevronLeft } from 'lucide-react';
 import { MakeOfferModal } from '@/components/map/make-offer-modal';
 import { OfferActions } from '@/components/offers/offer-actions';
+import { ProjectDetailView } from './project-detail-view';
 import { API_BASE_URL } from '@/constants/env';
 import type { Project, Offer, Post } from '@/types';
 
@@ -18,7 +19,9 @@ interface ExtendedPost extends Post {
   quantity?: number;
   unit?: string;
   condition?: string;
-  images?: any;
+  company?: any;
+  city?: any;
+  status: string;
   user: {
     id: string;
     name?: string;
@@ -61,9 +64,11 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter, onCreateProject }:
   const [offersMade, setOffersMade] = useState<ExtendedOffer[]>([]);
   const [offersReceived, setOffersReceived] = useState<ExtendedOffer[]>([]);
   const [availablePosts, setAvailablePosts] = useState<ExtendedPost[]>([]);
+  const [myPosts, setMyPosts] = useState<ExtendedPost[]>([]);
   const [userRole, setUserRole] = useState<string>('');
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [selectedPostForOffer, setSelectedPostForOffer] = useState<ExtendedPost | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,6 +95,7 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter, onCreateProject }:
 
         const data = await response.json();
         setProjects(data.projects || []);
+        setMyPosts(data.myPosts || []);
         setOffersMade(data.offersMade || []);
         setOffersReceived(data.offersReceived || []);
         setAvailablePosts(data.availablePosts || []);
@@ -133,18 +139,36 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter, onCreateProject }:
     window.location.reload();
   };
 
+  if (selectedProject) {
+    const projectOffers = offersReceived.filter(o => o.post.title === selectedProject.title);
+
+    return (
+      <div className="p-6">
+        <ProjectDetailView
+          project={selectedProject}
+          offers={projectOffers}
+          onBack={() => setSelectedProject(null)}
+          userRole={userRole}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <Tabs defaultValue={userRole === 'HOMEOWNER' ? 'projects' : userRole === 'COMPANY' ? 'available-posts' : 'offers-received'} className="w-full">
-        <TabsList className={`grid w-full bg-gray-900 ${userRole === 'HOMEOWNER' ? 'grid-cols-3' : userRole === 'COMPANY' ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full bg-gray-900 ${userRole === 'HOMEOWNER' ? 'grid-cols-4' : userRole === 'COMPANY' ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {userRole === 'HOMEOWNER' && (
-            <TabsTrigger value="projects" className="cursor-pointer">Projects</TabsTrigger>
+            <>
+              <TabsTrigger value="projects" className="cursor-pointer">Projects</TabsTrigger>
+              <TabsTrigger value="my-materials" className="cursor-pointer">Materials</TabsTrigger>
+            </>
           )}
           {userRole === 'COMPANY' && (
             <TabsTrigger value="available-posts" className="cursor-pointer">Available Posts</TabsTrigger>
           )}
-          <TabsTrigger value="offers-made" className="cursor-pointer">Offers Made</TabsTrigger>
-          <TabsTrigger value="offers-received" className="cursor-pointer">Offers Received</TabsTrigger>
+          <TabsTrigger value="offers-made" className="cursor-pointer text-xs">Sent</TabsTrigger>
+          <TabsTrigger value="offers-received" className="cursor-pointer text-xs">Received</TabsTrigger>
         </TabsList>
 
         {userRole === 'HOMEOWNER' && (
@@ -159,16 +183,17 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter, onCreateProject }:
               </Button>
 
               {projects
-                .filter(p => ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'].includes(p.status))
+                .filter(p => ['OPEN', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(p.status))
                 .length === 0 ? (
                 <p className="text-gray-400 text-center py-8">No active or completed projects yet</p>
               ) : (
                 projects
-                  .filter(p => ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'].includes(p.status))
+                  .filter(p => ['OPEN', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(p.status))
                   .map((project) => (
                     <Card
                       key={project.id}
                       className="bg-gray-900 border-gray-800 cursor-pointer hover:bg-gray-850 transition-colors"
+                      onClick={() => setSelectedProject(project)}
                     >
                       <CardHeader>
                         <div className="flex items-start justify-between">
@@ -192,6 +217,49 @@ export function ProjectsOffersTab({ onItemClick, onMapCenter, onCreateProject }:
                       </CardContent>
                     </Card>
                   ))
+              )}
+            </div>
+          </TabsContent>
+        )}
+
+        {userRole === 'HOMEOWNER' && (
+          <TabsContent value="my-materials" className="mt-4">
+            <div className="space-y-4">
+              {myPosts.length === 0 ? (
+                <p className="text-gray-400 text-center py-8">No materials posted yet</p>
+              ) : (
+                myPosts.map((post) => (
+                  <Card
+                    key={post.id}
+                    className="bg-gray-900 border-gray-800 cursor-pointer hover:bg-gray-850 transition-colors"
+                    onClick={() => handleItemClick({
+                      type: 'post',
+                      id: post.id,
+                      lat: post.latitude,
+                      lng: post.longitude,
+                    })}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-white text-md">{post.title}</CardTitle>
+                          <CardDescription className="text-gray-400 mt-1">
+                            {post.subtype}
+                          </CardDescription>
+                        </div>
+                        <Badge className="bg-gray-700 text-white">
+                          {post.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-4 text-xs text-gray-400">
+                        {post.quantity && <span>Qty: {post.quantity} {post.unit}</span>}
+                        {post.price && <span>Price: €{(post.price / 100).toFixed(2)}</span>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
               )}
             </div>
           </TabsContent>

@@ -145,7 +145,8 @@ export async function updatePostController(req: Request, res: Response) {
   try {
     const updates: any = { ...parsedBody.data };
     if (updates.availabilityDate) {
-      updates.availabilityDate = new Date(updates.availabilityDate);
+      const date = new Date(updates.availabilityDate);
+      updates.availabilityDate = isNaN(date.getTime()) ? undefined : date;
     }
 
     const result = await updatePost(id, userId, updates);

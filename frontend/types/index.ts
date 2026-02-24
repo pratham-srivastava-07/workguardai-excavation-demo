@@ -38,9 +38,15 @@ export interface Offer {
 export interface Project {
   id: string;
   title: string;
+  description?: string;
   status: string;
   budgetMin?: number;
   budgetMax?: number;
   size?: number;
+  images?: any;
+  streetAddress?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
   createdAt: string;
 }

@@ -149,9 +149,9 @@ export const postCreateSchema = zod.object({
     .string()
     .optional()
     .transform((val) => {
-      if (!val) return undefined;
-      // Convert YYYY-MM-DD to ISO string
-      return new Date(val + 'T00:00:00.000Z');
+      if (!val || val === 'Invalid Date') return undefined;
+      const date = new Date(val + 'T00:00:00.000Z');
+      return isNaN(date.getTime()) ? undefined : date;
     }),
 
   condition: zod.string().optional(),
