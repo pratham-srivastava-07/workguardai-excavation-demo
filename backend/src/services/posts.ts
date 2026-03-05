@@ -24,10 +24,33 @@ interface CreatePostInput {
   hazardousMaterials: boolean;
   structuralItems: boolean;
   socialLink?: string;
+  videoUrl?: string;
+  buyUrl?: string;
   images: string[];
   userId: string;
   companyId?: string;
   cityId?: string;
+
+  // Space fields
+  furnitured?: boolean;
+  monthlyPrice?: number;
+  depositSum?: number;
+  moveInDate?: any;
+  rentalType?: string;
+  startDate?: any;
+  endDate?: any;
+
+  // Vehicle fields
+  seats?: number;
+  vehicleCondition?: string;
+  registrationDate?: any;
+  serviceHistory?: boolean;
+  roadworthy?: boolean;
+  fuelType?: string;
+  power?: string;
+  driveType?: string;
+  transmission?: string;
+  sellerType?: string;
 }
 
 // Create a new post
@@ -533,9 +556,9 @@ function calculateDistance(
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // Distance in km
 }

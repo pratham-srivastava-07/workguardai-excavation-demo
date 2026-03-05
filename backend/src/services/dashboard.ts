@@ -158,7 +158,7 @@ export async function getCompanyDashboardStats(userId: string) {
         where: {
           post: {
             companyId: companyProfile.id,
-            type: { in: [PostType.MATERIAL, PostType.SPACE, PostType.SERVICE] },
+            type: { in: [PostType.MATERIAL, PostType.SPACE, PostType.VEHICLE] },
           },
           status: OfferStatus.ACCEPTED,
         },
