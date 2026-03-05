@@ -20,7 +20,7 @@ export async function getOrders(userId: string, role: Role) {
         where: {
           post: {
             companyId: companyProfile.id,
-            type: { in: [PostType.MATERIAL, PostType.SPACE, PostType.SERVICE] },
+            type: { in: [PostType.MATERIAL, PostType.SPACE, PostType.VEHICLE] },
           },
           status: OfferStatus.ACCEPTED,
         },
@@ -70,7 +70,7 @@ export async function getOrders(userId: string, role: Role) {
         where: {
           post: {
             cityId: cityProfile.id,
-            type: { in: [PostType.MATERIAL, PostType.SPACE] },
+            type: { in: [PostType.MATERIAL, PostType.SPACE, PostType.VEHICLE] },
           },
           status: OfferStatus.ACCEPTED,
         },

@@ -35,7 +35,6 @@ enum PaymentStatus {
 
 enum PostType {
   MATERIAL
-  SERVICE
   SPACE
   VEHICLE
 }
@@ -295,13 +294,26 @@ model Post {
   buyUrl     String? // external buy/rent link
   videoUrl   String? // link to 1min video
 
+  // Space specific
+  furnitured   Boolean?  @default(false)
+  monthlyPrice Int? // in cents
+  depositSum   Int? // in cents
+  moveInDate   DateTime?
+  rentalType   String? // PERMANENT, TEMPORARY
+  startDate    DateTime?
+  endDate      DateTime?
+
   // Vehicle specific
-  km               Int?
-  year             Int?
-  color            String?
-  vin              String?
-  gearbox          String? // Manual/Automatic
-  inspectionPassed Boolean @default(false)
+  seats            Int?
+  vehicleCondition String? // NEW, USED
+  registrationDate DateTime?
+  serviceHistory   Boolean?  @default(false)
+  roadworthy       Boolean?  @default(false)
+  fuelType         String? // GASOLINE, DIESEL, ELECTRIC
+  power            String? // hp/kw
+  driveType        String? // ALL_WHEEL, FRONT_WHEEL
+  transmission     String? // AUTOMATIC, MANUAL
+  sellerType       String? // PRIVATE, BUSINESS
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

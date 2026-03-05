@@ -1,8 +1,9 @@
 import zod from "zod"
+import { PostType, PostStatus } from "@prisma/client";
 
 export const signupBody = zod.object({
   name: zod.string(),
-  email: zod.email(),
+  email: zod.string().email(),
   password: zod.string().min(6),
   role: zod.enum(["HOMEOWNER", "COMPANY", "CITY"]).optional(),
 })
@@ -10,13 +11,13 @@ export const signupBody = zod.object({
 export type SignupBody = zod.infer<typeof signupBody>;
 
 export const signinBody = zod.object({
-  email: zod.email(),
+  email: zod.string().email(),
   password: zod.string().min(6)
 })
 
 export const contractorBody = zod.object({
   companyName: zod.string(),
-  services: zod.json(),
+  services: zod.any(),
   description: zod.string(),
 })
 
@@ -127,7 +128,7 @@ export const quoteStatusUpdateSchema = zod.object({
 });
 
 export const postCreateSchema = zod.object({
-  type: zod.enum(["MATERIAL", "SERVICE", "SPACE", "VEHICLE"]),
+  type: zod.nativeEnum(PostType),
 
   title: zod.string().min(3).max(200),
   description: zod.string().max(2000).optional(),
@@ -187,7 +188,7 @@ export const postCreateSchema = zod.object({
   serviceHistory: zod.coerce.boolean().optional(),
   roadworthy: zod.coerce.boolean().optional(),
   fuelType: zod.enum(["GASOLINE", "DIESEL", "ELECTRIC"]).optional(),
-  power: zod.coerce.number().optional(),
+  power: zod.string().optional(),
   driveType: zod.enum(["ALL_WHEEL", "FRONT_WHEEL"]).optional(),
   transmission: zod.enum(["AUTOMATIC", "MANUAL"]).optional(),
   sellerType: zod.enum(["PRIVATE", "BUSINESS"]).optional(),
@@ -219,13 +220,13 @@ export const postUpdateSchema = zod.object({
   structuralItems: zod.boolean().optional(),
   socialLink: zod.string().url().optional().or(zod.literal("")),
   images: zod.array(zod.string().url()).max(6).optional(),
-  status: zod.enum(["AVAILABLE", "RESERVED", "SOLD", "DELETED"]).optional(),
+  status: zod.nativeEnum(PostStatus).optional(),
 });
 
 // Post search schema
 export const postSearchSchema = zod.object({
   query: zod.string().optional(),
-  type: zod.enum(["MATERIAL", "SERVICE", "SPACE"]).optional(),
+  type: zod.nativeEnum(PostType).optional(),
   subtype: zod.string().optional(),
   latitude: zod.number().min(-90).max(90).optional(),
   longitude: zod.number().min(-180).max(180).optional(),
