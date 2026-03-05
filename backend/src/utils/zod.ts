@@ -127,7 +127,7 @@ export const quoteStatusUpdateSchema = zod.object({
 });
 
 export const postCreateSchema = zod.object({
-  type: zod.enum(["MATERIAL", "SERVICE", "SPACE"]),
+  type: zod.enum(["MATERIAL", "SERVICE", "SPACE", "VEHICLE"]),
 
   title: zod.string().min(3).max(200),
   description: zod.string().max(2000).optional(),
@@ -168,6 +168,29 @@ export const postCreateSchema = zod.object({
   structuralItems: zod.coerce.boolean().default(false),
 
   socialLink: zod.string().url().optional().or(zod.literal("")),
+  videoUrl: zod.string().url().optional().or(zod.literal("")),
+  buyUrl: zod.string().url().optional().or(zod.literal("")),
+
+  // Space specific fields
+  furnitured: zod.coerce.boolean().optional(),
+  monthlyPrice: zod.coerce.number().optional(),
+  depositSum: zod.coerce.number().optional(),
+  moveInDate: zod.string().optional(),
+  rentalType: zod.enum(["PERMANENT", "TEMPORARY"]).optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
+
+  // Vehicle specific fields
+  seats: zod.coerce.number().optional(),
+  vehicleCondition: zod.enum(["NEW", "USED"]).optional(),
+  registrationDate: zod.string().optional(),
+  serviceHistory: zod.coerce.boolean().optional(),
+  roadworthy: zod.coerce.boolean().optional(),
+  fuelType: zod.enum(["GASOLINE", "DIESEL", "ELECTRIC"]).optional(),
+  power: zod.coerce.number().optional(),
+  driveType: zod.enum(["ALL_WHEEL", "FRONT_WHEEL"]).optional(),
+  transmission: zod.enum(["AUTOMATIC", "MANUAL"]).optional(),
+  sellerType: zod.enum(["PRIVATE", "BUSINESS"]).optional(),
 
   companyId: zod.string().optional(),
   cityId: zod.string().optional(),

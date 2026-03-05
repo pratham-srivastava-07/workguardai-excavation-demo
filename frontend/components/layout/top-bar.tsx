@@ -6,6 +6,7 @@ import { Search, Menu, X, User, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
+import { Logo } from './logo';
 
 interface TopBarProps {
   onSearch?: (query: string) => void;
@@ -34,8 +35,8 @@ export function TopBar({ onSearch, searchQuery = '', isAuthenticated = false, us
   return (
     <div className="h-16 bg-black border-b border-gray-800 flex items-center justify-between px-4 md:px-6 z-50 relative">
       {/* Logo */}
-      <Link href="/" className="flex items-center space-x-2">
-        <span className="text-2xl font-bold text-white">Renowise</span>
+      <Link href="/" className="hover:opacity-90 transition-opacity">
+        <Logo size="md" />
       </Link>
 
       {/* Search Bar - Centered */}
