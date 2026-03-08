@@ -9,7 +9,7 @@
     "test:coverage": "jest --coverage",
     "dev": "npx tsc && node dist/index.js",
     "seed": "prisma db seed",
-    "build": "tsc"
+    "build": "npx prisma generate && tsc"
   },
   "prisma": {
     "seed": "node prisma/seed.ts"
